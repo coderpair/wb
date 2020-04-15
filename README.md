@@ -1,9 +1,11 @@
-# WBO
+# WB
 
-WBO is an online collaborative whiteboard that allows many users to draw simultaneously on a large virtual board.
-The board is updated in real time for all connected users, and its state is always persisted. It can be used for many different purposes, including art, entertainment, design, teaching.
+WB is an online collaborative whiteboard focusing primarily on the needs of online teachers/students.
 
-A demonstration server is available at [wbo.ophir.dev](https://wbo.ophir.dev)
+
+This board is an extension of the [lovasoa/whitebophir](https://github.com/lovasoa/whitebophir) project.
+
+A demonstration server is available at [lcfprep.com/wb/wb.html](https://lcfprep.com/wb/wb.html)
 
 ## Screenshots
 
