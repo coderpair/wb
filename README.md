@@ -1,6 +1,6 @@
 # WB
 
-WB is an online collaborative whiteboard focusing primarily on the needs of online teachers/students.
+WB is an online collaborative whiteboard focusing primarily on the needs of online teachers/students
 
 
 This board is an extension of the [lovasoa/whitebophir](https://github.com/lovasoa/whitebophir) project.
