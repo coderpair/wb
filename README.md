@@ -9,8 +9,11 @@ A demonstration server is available at [lcfprep.com/wb2/wb.html](https://lcfprep
 
 ## Screenshots
 
+The WB whiteboard:
+
 <img width="781" alt="Screen Shot 2020-04-15 at 12 50 19 AM" src="https://user-images.githubusercontent.com/8367977/79313222-dae6e700-7eb4-11ea-8d1b-8bbf1f9cb3a2.png">
 
+Some drawings from the original board:
 <table>
  <tr>
   <td> The <i><a href="https://wbo.ophir.dev/boards/anonymous">anonymous</a></i> board
