@@ -5,7 +5,7 @@ WB is an online collaborative whiteboard focusing primarily on the needs of onli
 
 This board is an extension of the [lovasoa/whitebophir](https://github.com/lovasoa/whitebophir) project.
 
-A demonstration server is available at [lcfprep.com/wb/wb.html](https://lcfprep.com/wb2/wb.html)
+A demonstration server is available at [lcfprep.com/wb2/wb.html](https://lcfprep.com/wb2/wb.html)
 
 ## Screenshots
 
