@@ -1,7 +1,7 @@
-/**
+﻿/**
  *                        WHITEBOPHIR
  *********************************************************
- * @licstart  The following is the entire license notice for the 
+ * @licstart  The following is the entire license notice for the
  *  JavaScript code in this page.
  *
  * Copyright (C) 2013  Ophir LOJKINE
@@ -76,6 +76,7 @@
 	}
 
 	function draw(data) {
+		Tools.drawingEvent=true;
 		switch (data.type) {
 			case "straight":
 				createLine(data);
@@ -84,11 +85,14 @@
 				var line = svg.getElementById(data['id']);
 				if (!line) {
 					console.error("Straight line: Hmmm... I received a point of a line that has not been created (%s).", data['id']);
-					createLine({ //create a new line in order not to loose the points
-						"id": data['id'],
-						"x": data['x2'],
-						"y": data['y2']
-					});
+					return false;
+				}else{
+					if(Tools.useLayers){
+						if(line.getAttribute("class")!="layer"+Tools.layer){
+							line.setAttribute("class","layer-"+Tools.layer);
+							Tools.group.appendChild(line);
+						}
+					}
 				}
 				updateLine(line, data);
 				break;
@@ -108,10 +112,12 @@
 		line.x2.baseVal.value = lineData['x2'] || lineData['x'];
 		line.y2.baseVal.value = lineData['y2'] || lineData['y'];
 		//If some data is not provided, choose default value. The line may be updated later
+		if(Tools.useLayers)
+		line.setAttribute("class","layer-"+Tools.layer);
 		line.setAttribute("stroke", lineData.color || "black");
 		line.setAttribute("stroke-width", lineData.size || 10);
 		line.setAttribute("opacity", Math.max(0.1, Math.min(1, lineData.opacity)) || 1);
-		svg.appendChild(line);
+		Tools.group.appendChild(line);
 		return line;
 	}
 
@@ -121,9 +127,10 @@
 	}
 
 	Tools.add({ //The new tool
-		"name": "Straight line",
-		"icon": "☇",
-		"shortcut": "l",
+		// "name": "Straight line",
+		 "icon": "☇",
+        "name": "Straight line",
+        //"icon": "",
 		"listeners": {
 			"press": startLine,
 			"move": continueLine,

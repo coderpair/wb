@@ -1,14 +1,12 @@
 var iolib = require('socket.io')
-	, log = require("./log.js").log
 	, BoardData = require("./boardData.js").BoardData;
 
-var MAX_EMIT_COUNT = 64; // Maximum number of draw operations before getting banned
-var MAX_EMIT_COUNT_PERIOD = 5000; // Duration (in ms) after which the emit count is reset
+var MAX_EMIT_COUNT = 2000; // Maximum number of draw operations before getting banned
+var MAX_EMIT_COUNT_PERIOD = 1000; // Duration (in ms) after which the emit count is reset
 
-/** Map from name to *promises* of BoardData
-	@type {Object<string, Promise<BoardData>>}
-*/
+// Map from name to *promises* of BoardData
 var boards = {};
+var io;
 
 function noFail(fn) {
 	return function noFailWrapped(arg) {
@@ -26,9 +24,7 @@ function startIO(app) {
 	return io;
 }
 
-/** Returns a promise to a BoardData with the given name
- * @returns {Promise<BoardData>}
-*/
+/** Returns a promise to a BoardData with the given name*/
 function getBoard(name) {
 	if (boards.hasOwnProperty(name)) {
 		return boards[name];
@@ -39,30 +35,34 @@ function getBoard(name) {
 	}
 }
 
+
+
+function getConnectedSockets() {
+	return Object.values(io.of("/").connected);
+}
+
 function socketConnection(socket) {
 
-	async function joinBoard(name) {
+	function joinBoard(name) {
 		// Default to the public board
 		if (!name) name = "anonymous";
 
 		// Join the board
 		socket.join(name);
 
-		var board = await getBoard(name);
-		board.users.add(socket.id);
-		log('board joined', { 'board': board.name, 'users': board.users.size });
-		return board;
+		return getBoard(name).then(board => {
+			board.users.add(socket.id);
+			console.log(new Date() + ": " + board.users.size + " users in " + board.name + ". Socket ID: "+socket.id);
+			return board;
+		});
 	}
 
-	socket.on("error", noFail(function onError(error) {
-		log("ERROR", error);
+	socket.on("getboard", noFail(function onGetBoard(name) {
+		joinBoard(name).then(board => {
+			//Send all the board's data as soon as it's loaded
+			socket.emit("broadcast", { _children: board.getAll() });
+		});
 	}));
-
-	socket.on("getboard", async function onGetBoard(name) {
-		var board = await joinBoard(name);
-		//Send all the board's data as soon as it's loaded
-		socket.emit("broadcast", { _children: board.getAll() });
-	});
 
 	socket.on("joinboard", noFail(joinBoard));
 
@@ -74,11 +74,14 @@ function socketConnection(socket) {
 			emitCount++;
 			if (emitCount > MAX_EMIT_COUNT) {
 				var request = socket.client.request;
-				log('BANNED', {
+				console.log(JSON.stringify({
+					event: 'banned',
 					user_agent: request.headers['user-agent'],
 					original_ip: request.headers['x-forwarded-for'] || request.headers['forwarded'],
+					time: currentSecond,
 					emit_count: emitCount
-				});
+				}));
+				socket.disconnect(true);
 				return;
 			}
 		} else {
@@ -87,56 +90,92 @@ function socketConnection(socket) {
 		}
 
 		var boardName = message.board || "anonymous";
-		var data = message.data;
-
 		if (!socket.rooms.hasOwnProperty(boardName)) socket.join(boardName);
 
-		if (!data) {
-			console.warn("Received invalid message: %s.", JSON.stringify(message));
-			return;
-		}
+		getBoard(boardName).then(board => {
+			
+			var data = message.data;
+			if (!data) {
+				console.warn("Received invalid message: %s.", JSON.stringify(message));
+				return;
+			}
+			if(data.type != "cursor"){
+				board.updateMsgCount(socket.id);
+			}
+			data.socket=socket.id;
+			
+			if(data.type == "clear" || data.type == "undo" || data.type == "redo"){
+				var success = 1;
+				if(data.type == "clear"){
+					success = board.clear();
+				}else if(data.type == "undo"){
+					success = board.undo();
+				}else{
+					success = board.redo();
+				}
+				if(success==1){
+					var sockets = getConnectedSockets();
+					sockets.forEach(function(s,i) {
+						s.emit('broadcast', {type:'sync', id: socket.id, _children: board.getAll(),msgCount:board.getMsgCount(s.id)});
+					});
+				}else if(data.type == "clear"){
+					socket.emit("broadcast", {type: 'sync', id: socket.id,msgCount:board.getMsgCount(socket.id)});
+				}
+				
+			}else{
+				//Send data to all other users connected on the same board
+				socket.broadcast.to(boardName).emit('broadcast', data);
 
-		//Send data to all other users connected on the same board
-		socket.broadcast.to(boardName).emit('broadcast', data);
-
-		// Save the message in the board
-		saveHistory(boardName, data);
+				// Save the message in the board
+				handleMsg(boardName, data);
+			}
+		})
 	}));
 
 	socket.on('disconnecting', function onDisconnecting(reason) {
-		Object.keys(socket.rooms).forEach(async function disconnectFrom(room) {
+		Object.keys(socket.rooms).forEach(function disconnectFrom(room) {
 			if (boards.hasOwnProperty(room)) {
-				var board = await boards[room];
-				board.users.delete(socket.id);
-				var userCount = board.users.size;
-				log('disconnection', { 'board': board.name, 'users': board.users.size });
-				if (userCount === 0) {
-					board.save();
-					delete boards[room];
-				}
+				boards[room].then(board => {
+					board.users.delete(socket.id);
+					var userCount = board.users.size;
+					console.log(userCount + " users in " + room + " Socket ID: " + socket.id);
+					if (userCount === 0) {
+						board.save();
+						delete boards[room];
+					}
+				});
 			}
 		});
 	});
 }
 
-async function saveHistory(boardName, message) {
+function handleMsg(boardName, message) {
 	var id = message.id;
-	var board = await getBoard(boardName);
-	switch (message.type) {
-		case "delete":
-			if (id) board.delete(id);
-			break;
-		case "update":
-			delete message.type;
-			if (id) board.update(id, message);
-			break;
-		case "child":
-			board.addChild(message.parent, message);
-			break;
-		default: //Add data
-			if (!id) throw new Error("Invalid message: ", message);
-			board.set(id, message);
-	}
+	getBoard(boardName).then(board => {
+		switch (message.type) {
+			case "cursor":
+				break;
+			case "undo":
+				board.undo(message);
+				break;
+			case "clear":
+				board.clear();
+				break;
+			case "delete":
+				if (id) board.delete(id,message);
+				break;
+			case "update":
+				delete message.type;
+				if (id) board.update(id, message);
+				break;
+			case "child":
+				board.addChild(message.parent, message);
+				break;
+			default: //Add data
+				if (!id) throw new Error("Invalid message: ", message);
+				board.set(id, message);
+		}
+	});
 }
 
 function generateUID(prefix, suffix) {

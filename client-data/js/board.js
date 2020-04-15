@@ -1,7 +1,7 @@
 /**
  *                        WHITEBOPHIR
  *********************************************************
- * @licstart  The following is the entire license notice for the
+ * @licstart  The following is the entire license notice for the 
  *  JavaScript code in this page.
  *
  * Copyright (C) 2013  Ophir LOJKINE
@@ -25,57 +25,196 @@
  */
 
 var Tools = {};
+var svgWidth, svgHeight;
 
-Tools.i18n = (function i18n() {
-	var translations = JSON.parse(document.getElementById("translations").text);
-	return {
-		"t": function translate(s) {
-			return translations[s] || s;
-		}
-	};
-})();
+
 
 Tools.board = document.getElementById("board");
 Tools.svg = document.getElementById("canvas");
-Tools.socket = io.connect('', {
+Tools.group = Tools.svg.getElementById("layer-1");
+
+
+//Initialization
+Tools.curTool = null;
+Tools.showMarker = false;
+Tools.useLayers = true;
+Tools.layer = 1;
+Tools.drawingEvent = true;
+Tools.pathDataCache = {};
+Tools.eraserCache={};
+Tools.acceptMsgs=true;
+Tools.msgs = [];
+
+Tools.menu_width=40;
+Tools.scaleDefaults=[.4,.75,1,1.5,2,4,8];
+Tools.scaleIndex = 2;
+
+
+Tools.socket = null,
+Tools.connect = function() {
+  var self = this;
+  if( self.socket ) {
+    self.socket.destroy();
+    delete self.socket;
+    self.socket = null;
+  }
+  this.socket = io.connect('', {
+	"reconnection" : true,
 	"reconnectionDelay": 100, //Make the xhr connections as fast as possible
 	"timeout": 1000 * 60 * 20 // Timeout after 20 minutes
-});
-Tools.curTool = null;
+  });
+  this.socket.on( 'connect', function () {
+    console.log( 'connected to server' );
+	Tools.clearBoard(true);
+	//Get the board as soon as the page is loaded
+	Tools.socket.emit("getboard", Tools.boardName);
+  } );
+  this.socket.on( 'disconnect', function () {
+    //console.log( 'disconnected from server' );
+    window.setTimeout( 'Tools.connect()', 20 );
+  } );
+  this.socket.on("broadcast", function (msg) {
+	//console.log( 'msg' );
+	handleMessage(msg).then(function () {
+		if(msg.type=='sync'){
+			//console.log("sync");
+			//console.log(Tools.msgs.length + "  " + msg.msgCount);
+			if(Tools.msgs.length>msg.msgCount){
+				for(var i = msg.msgCount;i<Tools.msgs.length;i++){
+					Tools.msgs[i].curTool.draw(Tools.msgs[i].msg, true);
+				}
+			}
+		}
+
+	}).finally(function afterload() {
+		var loadingEl = document.getElementById("loadingMessage");
+		loadingEl.classList.add("hidden");
+	});
+  });
+  this.socket.on("reconnect", function onReconnection() {
+	Tools.clearBoard(true);
+	Tools.socket.emit("getboard", Tools.boardName);
+
+  });
+}
+
+$('#pleaseWaitDialog').modal();
+Tools.connect();
+
+
 Tools.boardName = (function () {
 	var path = window.location.pathname.split("/");
-	return decodeURIComponent(path[path.length - 1]);
+	return path[path.length - 1];
 })();
 
-//Get the board as soon as the page is loaded
-Tools.socket.emit("getboard", Tools.boardName);
+
+//Turn on the cursor tracking
+Tools.board.addEventListener("mousemove", function(evt){
+	var message = {
+		"board": Tools.boardName,
+		"data": {
+			type:"cursor",
+			x : evt.pageX / Tools.getScale(),
+			y : evt.pageY / Tools.getScale()
+		}
+	}
+	Tools.socket.emit('broadcast', message);
+	if(Tools.showMarker){
+		moveMarker(message.data);
+	}
+	
+});
+
+
+
+function moveMarker(message) {
+	var cursor = Tools.svg.getElementById("mycursor");
+	if(!cursor){ 
+		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='mycursor' cx='100' cy='100' r='10' fill='#e75480' />";
+		cursor = Tools.svg.getElementById("mycursor");
+		
+	}
+	Tools.svg.appendChild(cursor);
+	//cursor.setAttributeNS(null, "r", Tools.getSize());
+	cursor.r.baseVal.value=Tools.getSize()/2;
+	cursor.setAttributeNS(null, "cx", message.x-25);
+        cursor.setAttributeNS(null, "cy", message.y-25);
+};
+
+
+
+function moveCursor(message) {
+	var cursor = Tools.svg.getElementById("cursor"+message.socket);
+	if(!cursor){ 
+		var cursors = Tools.svg.getElementsByClassName("opcursor");
+		for(var i = 0; i < cursors.length; i++)
+		{
+   			cursors[i].remove()
+		}
+		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='cursor"+message.socket+"' cx='100' cy='100' r='10' fill='orange' />";
+		cursor = Tools.svg.getElementById("cursor"+message.socket);
+		Tools.svg.appendChild(cursor);
+	}
+	cursor.setAttributeNS(null, "cx", message.x);
+     cursor.setAttributeNS(null, "cy", message.y);
+};
+
+Tools.clearBoard = function(deleteMsgs){
+	Tools.showMarker = false;
+	Tools.drawingEvent = true;
+	Tools.eraserCache={};
+	Tools.pathDataCache = {};
+	if(deleteMsgs){
+		Tools.msgs = [];
+		Tools.acceptMsgs=true;
+	}
+	Tools.layer = 1;
+	var masks = document.getElementsByClassName('masks');
+	while(masks[0]) {
+    		masks[0].parentNode.removeChild(masks[0])
+	};
+	var defs = document.getElementById("defs");
+	var cursors = document.getElementById("cursors");
+	var rect1 = document.getElementById("rect_1");
+	Tools.svg.innerHTML="";
+	Tools.svg.appendChild(defs);
+	Tools.svg.appendChild(rect1);
+	Tools.svg.appendChild(cursors);
+	var group = Tools.createSVGElement("g");
+	group.id="layer-"+Tools.layer;
+	group.style.mask = "url(#mask-layer-"+Tools.layer+")"
+	Tools.svg.appendChild(group);
+	Tools.group = group;
+};
 
 Tools.HTML = {
 	template: new Minitpl("#tools > .tool"),
-	addShortcut: function addShortcut(key, callback) {
-		window.addEventListener("keydown", function (e) {
-			if (e.key === key && !e.target.matches("input[type=text], textarea")) {
-				callback();
-			}
-		});
-	},
-	addTool: function (toolName, toolIcon, toolShortcut) {
+	templateExtra: new Minitpl("#tool-list > .tool-extra"),
+	addTool: function (toolName, toolIcon, toolIconFA, toolShortcut, isExtra) {
 		var callback = function () {
 			Tools.change(toolName);
 		};
-		this.addShortcut(toolShortcut, function () {
-			Tools.change(toolName);
-			document.activeElement.blur();
+		window.addEventListener("keydown", function (e) {
+			if (e.key === toolShortcut && !e.target.matches("input[type=text], textarea")) {
+				Tools.change(toolName);
+				document.activeElement.blur();
+			}
 		});
-		return this.template.add(function (elem) {
+		var tmp = this.template;
+		if(isExtra){
+			tmp=this.templateExtra;
+		}
+		return tmp.add(function (elem) {
 			elem.addEventListener("click", callback);
 			elem.id = "toolID-" + toolName;
-			elem.getElementsByClassName("tool-name")[0].textContent = Tools.i18n.t(toolName);
-			elem.getElementsByClassName("tool-icon")[0].textContent = toolIcon;
+			
+			if(toolIconFA){
+				elem.getElementsByClassName("tool-icon")[0].innerHTML = toolIconFA;
+			}else{
+				elem.getElementsByClassName("tool-icon")[0].textContent = toolIcon;
+			}
 			elem.title =
-				Tools.i18n.t(toolName) + " (" +
-				Tools.i18n.t("keyboard shortcut") + ": " +
-				toolShortcut + ")";
+				Tools.i18n.t(toolName) + (Tools.list[toolName].toggle?"  Click to toggle":"");
 		});
 	},
 	changeTool: function (oldToolName, newToolName) {
@@ -91,19 +230,6 @@ Tools.HTML = {
 		link.rel = "stylesheet";
 		link.type = "text/css";
 		document.head.appendChild(link);
-	},
-	colorPresetTemplate: new Minitpl("#colorPresetSel .colorPresetButton"),
-	addColorButton: function (button) {
-		var setColor = Tools.setColor.bind(Tools, button.color);
-		if (button.key) this.addShortcut(button.key, setColor);
-		return this.colorPresetTemplate.add(function (elem) {
-			elem.addEventListener("click", setColor);
-			elem.id = "color_" + button.color.replace(/^#/, '');
-			elem.style.backgroundColor = button.color;
-			if (button.key) {
-				elem.title = Tools.i18n.t("keyboard shortcut") + ": " + button.key;
-			}
-		});
 	}
 };
 
@@ -126,7 +252,7 @@ Tools.add = function (newTool) {
 	}
 
 	//Add the tool to the GUI
-	Tools.HTML.addTool(newTool.name, newTool.icon, newTool.shortcut);
+	Tools.HTML.addTool(newTool.name, newTool.icon, newTool.iconFA, newTool.shortcut,newTool.isExtra);
 
 	//There may be pending messages for the tool
 	var pending = Tools.pendingMessages[newTool.name];
@@ -160,12 +286,17 @@ Tools.change = function (toolName) {
 	//There is not necessarily already a curTool
 	if (Tools.curTool !== null) {
 		//It's useless to do anything if the new tool is already selected
-		if (newtool === Tools.curTool) return;
-
+		if (newtool === Tools.curTool){
+			if(newtool.toggle){
+				var elem = document.getElementById("toolID-" + newtool.name);
+				newtool.toggle(elem);
+			}
+			return;
+		}
 		//Remove the old event listeners
 		for (var event in Tools.curTool.compiledListeners) {
 			var listener = Tools.curTool.compiledListeners[event];
-			Tools.board.removeEventListener(event, listener);
+			Tools.svg.removeEventListener(event, listener);
 		}
 
 		//Call the callbacks of the old tool
@@ -175,10 +306,10 @@ Tools.change = function (toolName) {
 	//Add the new event listeners
 	for (var event in newtool.compiledListeners) {
 		var listener = newtool.compiledListeners[event];
-		Tools.board.addEventListener(event, listener, { 'passive': false });
+		Tools.svg.addEventListener(event, listener, { 'passive': false });
 	}
 
-	//Call the start callback of the new tool
+	//Call the start callback of the new tool 
 	newtool.onstart(Tools.curTool);
 	Tools.curTool = newtool;
 };
@@ -192,6 +323,7 @@ Tools.send = function (data, toolName) {
 		"board": Tools.boardName,
 		"data": d
 	}
+	Tools.msgs.push({curTool:Tools.curTool,msg:message});
 	Tools.socket.emit('broadcast', message);
 };
 
@@ -237,25 +369,45 @@ function batchCall(fn, args) {
 // Call messageForTool recursively on the message and its children
 function handleMessage(message) {
 	//Check if the message is in the expected format
-	if (!message.tool && !message._children) {
-		console.error("Received a badly formatted message (no tool). ", message);
+	if(message.type == "cursor"){
+		moveCursor(message);
+	}else if(message.type == "sync"){
+		if(message.id == Tools.socket.id)Tools.acceptMsgs = true;
+		//console.log("socket match:" + (message.id == Tools.socket.id));
+		Tools.clearBoard(false);
 	}
 	if (message.tool) messageForTool(message);
 	if (message._children) return batchCall(handleMessage, message._children);
 	else return Promise.resolve();
 }
-
+/*
 //Receive draw instructions from the server
 Tools.socket.on("broadcast", function (msg) {
 	handleMessage(msg).finally(function afterload() {
 		var loadingEl = document.getElementById("loadingMessage");
 		loadingEl.classList.add("hidden");
+		if(msg.type=='sync'){
+			if(Tools.msgs.length>msg.msgCount){
+				for(var i = msg.msgCount;i<Tools.msgs.length;i++){
+					Tools.msgs[i].curTool.draw(Tools.msgs[i].msg, true);
+				}
+			}
+		}
 	});
 });
-Tools.socket.on("reconnect", function onReconnection() {
-	Tools.socket.emit('joinboard', Tools.boardName);
+
+Tools.socket.on("disconnect", function onDisconnection() {
+	Tools.socket = io.connect('', {
+	"reconnection" : true,
+    	"forceNew" : true,
+	"reconnectionDelay": 100, //Make the xhr connections as fast as possible
+	"timeout": 1000 * 60 * 20 // Timeout after 20 minutes
+	});
+	//Get the board as soon as the page is loaded
+	Tools.socket.emit("getboard", Tools.boardName);
 });
 
+*/
 Tools.unreadMessagesCount = 0;
 Tools.newUnreadMessage = function () {
 	Tools.unreadMessagesCount++;
@@ -268,10 +420,7 @@ window.addEventListener("focus", function () {
 });
 
 function updateDocumentTitle() {
-	document.title =
-		(Tools.unreadMessagesCount ? '(' + Tools.unreadMessagesCount + ') ' : '') +
-		Tools.boardName +
-		" | WBO";
+	
 }
 
 (function () {
@@ -284,7 +433,7 @@ function updateDocumentTitle() {
 
 		clearTimeout(scrollTimeout);
 		scrollTimeout = setTimeout(function updateHistory() {
-			var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + Tools.getScale().toFixed(1);
+			var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + Tools.getScale().toFixed(2);
 			if (Date.now() - lastStateUpdate > 5000 && hash != window.location.hash) {
 				window.history.pushState({}, "", hash);
 				lastStateUpdate = Date.now();
@@ -300,6 +449,13 @@ function updateDocumentTitle() {
 		var y = coords[1] | 0;
 		var scale = parseFloat(coords[2]);
 		resizeCanvas({ x: x, y: y });
+		if (Tools.list["Zoom In"]) {
+			Tools.scaleIndex = 2;
+			for(var i = 0; i < Tools.scaleDefaults.length;i++){
+				if(Tools.scaleDefaults[i]==scale)Tools.scaleIndex = i;
+			}
+			scale=Tools.scaleDefaults[Tools.scaleIndex]
+		}
 		Tools.setScale(scale);
 		window.scrollTo(x * scale, y * scale);
 	}
@@ -315,10 +471,10 @@ function resizeCanvas(m) {
 	var x = m.x | 0, y = m.y | 0
 	var MAX_BOARD_SIZE = 65536; // Maximum value for any x or y on the board
 	if (x > Tools.svg.width.baseVal.value - 2000) {
-		Tools.svg.width.baseVal.value = Math.min(x + 2000, MAX_BOARD_SIZE);
+		//Tools.svg.width.baseVal.value = Math.min(x + 2000, MAX_BOARD_SIZE);
 	}
 	if (y > Tools.svg.height.baseVal.value - 2000) {
-		Tools.svg.height.baseVal.value = Math.min(y + 2000, MAX_BOARD_SIZE);
+		//Tools.svg.height.baseVal.value = Math.min(y + 2000, MAX_BOARD_SIZE);
 	}
 }
 
@@ -328,20 +484,27 @@ function updateUnreadCount(m) {
 	}
 }
 
-Tools.messageHooks = [resizeCanvas, updateUnreadCount];
+Tools.messageHooks = [updateUnreadCount];
 
 Tools.scale = 1.0;
 var scaleTimeout = null;
 Tools.setScale = function setScale(scale) {
 	if (isNaN(scale)) scale = 1;
-	scale = Math.max(0.1, Math.min(10, scale));
+	scale = Math.max(0.4, Math.min(10, scale));
 	Tools.svg.style.willChange = 'transform';
-	Tools.svg.style.transform = 'scale(' + scale + ')';
+	//Tools.svg.style.transform = 'scale(' + scale + ')';
+	//svg.setAttributeNS(null, "width", svgWidth * percent);
+	//svg.setAttributeNS(null, "height", svgHeight * percent);
+	
+	
+        Tools.svg.width.baseVal.value = svgWidth*scale;// Tools.svg.width.baseVal.value/scale;
+	Tools.svg.height.baseVal.value = svgHeight*scale;//Tools.svg.height.baseVal.value/scale;
+	Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
 	clearTimeout(scaleTimeout);
 	scaleTimeout = setTimeout(function () {
 		Tools.svg.style.willChange = 'auto';
 	}, 1000);
-	Tools.scale = scale;
+	Tools.scale = scale; 
 	return scale;
 }
 Tools.getScale = function getScale() {
@@ -439,36 +602,19 @@ Tools.positionElement = function (elem, x, y) {
 	elem.style.left = x + "px";
 };
 
-Tools.colorPresets = [
-	{ color: "#001f3f", key: '1' },
-	{ color: "#FF4136", key: '2' },
-	{ color: "#0074D9", key: '3' },
-	{ color: "#FF851B", key: '4' },
-	{ color: "#FFDC00", key: '5' },
-	{ color: "#3D9970", key: '6' },
-	{ color: "#91E99B", key: '7' },
-	{ color: "#B10DC9", key: '8' },
-	{ color: "#7FDBFF", key: '9' },
-	{ color: "#AAAAAA", key: '0' },
-	{ color: "#01FF70" }
-];
-
-Tools.color_chooser = document.getElementById("chooseColor");
-
-Tools.setColor = function (color) {
-	Tools.color_chooser.value = color;
-};
-
 Tools.getColor = (function color() {
-	var color_index = (Math.random() * Tools.colorPresets.length) | 0;
-	var initial_color = Tools.colorPresets[color_index].color;
-	Tools.setColor(initial_color);
-	return function () { return Tools.color_chooser.value; };
+	var chooser = document.getElementById("chooseColor");
+	// Init with a random color
+	var clrs = ["#001f3f", "#0074D9", "#7FDBFF", "#39CCCC", "#3D9970",
+		"#2ECC40", "#01FF70", "#FFDC00", "#FF851B", "#FF4136",
+		"#85144b", "#F012BE", "#B10DC9", "#111111", "#AAAAAA"];
+	chooser.value = clrs[Math.random() * clrs.length | 0];
+	return function () { return chooser.value; };
 })();
 
-Tools.colorPresets.forEach(Tools.HTML.addColorButton.bind(Tools.HTML));
 
-Tools.getSize = (function size() {
+
+Tools.setSize = (function size() {
 	var chooser = document.getElementById("chooseSize");
 	var sizeIndicator = document.getElementById("sizeIndicator");
 
@@ -479,6 +625,11 @@ Tools.getSize = (function size() {
 	update();
 
 	chooser.onchange = chooser.oninput = update;
+	return function (value) { chooser.value=value; update()};
+})();
+
+Tools.getSize = (function size() {
+	var chooser = document.getElementById("chooseSize");
 	return function () { return chooser.value; };
 })();
 
@@ -497,9 +648,22 @@ Tools.getOpacity = (function opacity() {
 	};
 })();
 
+Tools.i18n = (function i18n() {
+	var translations = JSON.parse(document.getElementById("translations").text);
+	return {
+		"t": function translate(s) {
+			return translations[s] || s;
+		}
+	};
+})();
+
 //Scale the canvas on load
-Tools.svg.width.baseVal.value = document.body.clientWidth;
-Tools.svg.height.baseVal.value = document.body.clientHeight;
+var screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+var screenHeight =  Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+svgWidth = Tools.svg.width.baseVal.value = Math.max(screenWidth + 2000, screenWidth * 2.5);
+svgHeight = Tools.svg.height.baseVal.value =  Math.max(screenHeight + 2000, screenHeight * 2.5);
+
+Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
 
 /***********  Polyfills  ***********/
 if (!window.performance || !window.performance.now) {
@@ -513,6 +677,7 @@ if (!Math.hypot) {
 		return Math.sqrt(x * x + y * y);
 	}
 }
+
 
 /**
  What does a "tool" object look like?

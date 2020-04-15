@@ -1,4 +1,3 @@
-
 // @info
 //   Polyfill for SVG getPathData() and setPathData() methods. Based on:
 //   - SVGPathSeg polyfill by Philip Rogers (MIT License)
@@ -8,7 +7,7 @@
 //   - arcToCubicCurves() by Dmitry Baranovskiy (MIT License)
 //     https://github.com/DmitryBaranovskiy/raphael/blob/v2.1.1/raphael.core.js#L1837
 // @author
-//   Jarosław Foksa
+//   Jaros?aw Foksa
 // @license
 //   MIT License
 if (!SVGPathElement.prototype.getPathData || !SVGPathElement.prototype.setPathData) {

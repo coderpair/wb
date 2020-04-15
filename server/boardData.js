@@ -25,9 +25,8 @@
  * @module boardData
  */
 
-var fs = require('fs')
-	, log = require("./log.js").log
-	, path = require("path");
+var fs = require('fs'),
+	path = require("path");
 
 /** @constant
     @type {string}
@@ -41,10 +40,11 @@ var HISTORY_DIR = path.join(__dirname, "../server-data/");
     @default
     Number of seconds of inactivity after which the board should be saved to a file
 */
+var SAVE = false;
 var SAVE_INTERVAL = 1000 * 2; // Save after 2 seconds of inactivity
 var MAX_SAVE_DELAY = 1000 * 60; // Save after 60 seconds even if there is still activity
 var MAX_ITEM_COUNT = 32768; // Max number of items to keep in the board
-var MAX_CHILDREN = 128; // Max number of subitems in an item
+var MAX_CHILDREN = 12800; // Max number of subitems in an item
 var MAX_BOARD_SIZE = 65536; // Maximum value for any x or y on the board
 
 /**
@@ -56,59 +56,189 @@ var BoardData = function (name) {
 	this.board = {};
 	this.file = path.join(HISTORY_DIR, "board-" + encodeURIComponent(name) + ".json");
 	this.lastSaveDate = Date.now();
+	this.actionHistory = [];
+	this.undoHistory = [];
+	this.actionHistory.push = function (){
+		if (this.length >= 25) {
+			this.shift();
+		}
+		return Array.prototype.push.apply(this,arguments);
+	}
+	this.userState = {};
 	this.users = new Set();
 };
+
 
 /** Adds data to the board */
 BoardData.prototype.set = function (id, data) {
 	//KISS
-	data.time = Date.now();
-	this.validate(data);
 	this.board[id] = data;
-	this.delaySave();
+	this.actionHistory.push({type:'A',data:data});
+	this.undoHistory = [];
+	this.formatAndSave(data,true);
 };
 
 /** Adds a child to an element that is already in the board
- * @param {string} id - Identifier of the parent element.
+ * @param {string} parentId - Identifier of the parent element.
  * @param {object} child - Object containing the the values to update.
- * @param {boolean} [create=true] - Whether to create an empty parent if it doesn't exist
  * @returns {boolean} - True if the child was added, else false
 */
 BoardData.prototype.addChild = function (parentId, child) {
-	var obj = this.board[parentId];
-	if (typeof obj !== "object") return false;
-	if (Array.isArray(obj._children)) obj._children.push(child);
-	else obj._children = [child];
-
-	this.validate(obj);
-	this.delaySave();
-	return true;
+	var data = this.board[parentId];
+	if (typeof data !== "object"){
+		return;
+	}
+	if (Array.isArray(data._children)) data._children.push(child);
+	else data._children = [child];
+	this.formatAndSave(data,(data.type != "erase"));
 };
 
 /** Update the data in the board
  * @param {string} id - Identifier of the data to update.
- * @param {object} data - Object containing the the values to update.
+ * @param {object} newData - Object containing the the values to update.
  * @param {boolean} create - True if the object should be created if it's not currently in the DB.
 */
-BoardData.prototype.update = function (id, data, create) {
-	var obj = this.board[id];
-	if (typeof obj === "object") {
-		for (var i in data) {
-			obj[i] = data[i];
-		}
-	} else if (create || obj !== undefined) {
-		this.board[id] = data;
+BoardData.prototype.update = function (id, newData, create) {
+	var data = this.board[id];
+	if (typeof data !== "object"){
+		return;
 	}
-	this.delaySave();
+	for (var i in newData) {
+		data[i] = newData[i];
+	}
+	
+	this.formatAndSave(data,true);
 };
 
 /** Removes data from the board
  * @param {string} id - Identifier of the data to delete.
  */
-BoardData.prototype.delete = function (id) {
+BoardData.prototype.delete = function (id,data) {
 	//KISS
-	delete this.board[id];
+	if(this.board[id]){
+		this.actionHistory.push({type:'R',data:this.board[id]});
+		this.undoHistory = [];
+		delete this.board[id];
+		this.delaySave();
+	}
+};
+
+/** Clears the board
+ * @param none
+ */
+BoardData.prototype.clear = function () {
+	//KISS
+	if(Object.keys(this.board).length === 0){
+		return 0;
+	}else{
+		this.actionHistory.push({type:'C',data:this.board});
+		this.undoHistory = [];
+		this.board={};
+		this.delaySave();
+		return 1;
+	}
+};
+
+/** Undo 
+ * @param none
+ */
+BoardData.prototype.undo = function () {
+	//KISS
+	if(this.actionHistory.length>0){
+		var lastEvent = this.actionHistory.pop();
+		this.undoHistory.push(lastEvent);
+		switch(lastEvent.type){
+			case "C":
+				//for(id in lastEvent.data){
+					this.board=lastEvent.data;
+				//}
+				break;
+			case "R":
+				this.board[lastEvent.data.id]=lastEvent.data;
+				break;
+			case "A":
+				delete this.board[lastEvent.data.id];
+				break;
+			default:
+				break;
+		}
+			this.delaySave();
+			return 1;
+	}
+	return 0;
+};
+
+/** Redo 
+ * @param none
+ */
+BoardData.prototype.redo = function () {
+	//KISS
+	if(this.undoHistory.length>0){
+		var lastEvent = this.undoHistory.pop();
+		this.actionHistory.push(lastEvent);
+		switch(lastEvent.type){
+			case "C":
+				//for(id in lastEvent.data){
+					this.board = {};
+				//}
+				break;
+			case "A":
+				this.board[lastEvent.data.id]=lastEvent.data;
+				break;
+			case "R":
+				delete this.board[lastEvent.data.id];
+				break;
+			default:
+				break;
+		}
+		this.delaySave();
+		return 1;
+	}
+	return 0;
+};
+
+BoardData.prototype.formatAndSave = function(data,stamp){
+	this.validate(data);
+	if(stamp)
+	data.time = Date.now();
 	this.delaySave();
+};
+
+BoardData.prototype.updateActionHistory= function(id){
+	var found = 0;
+	for(var i =this.actionHistory.length-1; i >=0; i--){ 
+		if ( this.actionHistory[i].type == 'A' && this.actionHistory[i].data.id == id) { 
+			found=1;
+			if(i!=this.actionHistory.length-1)
+				this.actionHistory.push(this.actionHistory.splice(i, 1));
+			break;
+		}
+	}
+	if(!found)
+		this.actionHistory.push({type:'A',data:data});
+};
+
+/**updateMsgCount
+ * @param {string} id - Identifier of the socket id.
+ */
+BoardData.prototype.updateMsgCount = function (id) {
+	//KISS
+	if(!this.userState[id]){
+		this.userState[id]={};
+		this.userState[id].msgCount=1;
+	}else{
+		this.userState[id].msgCount++;
+	}
+};
+
+/**getMsgCount
+ * @param {string} id - Identifier of the socket id.
+ */
+BoardData.prototype.getMsgCount = function (id) {
+	//KISS
+	if(this.userState[id]&&this.userState[id].msgCount)
+		return this.userState[id].msgCount;
+	return 0;
 };
 
 /** Reads data from the board
@@ -125,11 +255,12 @@ BoardData.prototype.get = function (id, children) {
  */
 BoardData.prototype.getAll = function (id) {
 	var results = [];
-	for (var i in this.board) {
-		if (!id || i > id) {
-			results.push(this.board[i]);
-		}
-	}
+	var board = this.board;
+	var ids = Object.keys(board);
+	var sorted = ids.sort(function (x, y) {
+		return (board[x].time | 0) - (board[y].time | 0);
+	})
+	for (var i = 0; i < sorted.length; i++) results.push(board[sorted[i]]);
 	return results;
 };
 
@@ -159,38 +290,20 @@ BoardData.prototype.delaySave = function (file) {
 /** Saves the data in the board to a file.
  * @param {string} [file=this.file] - Path to the file where the board data will be saved.
 */
-BoardData.prototype.save = async function (file) {
+BoardData.prototype.save = function (file) {
 	this.lastSaveDate = Date.now();
 	this.clean();
-	if (!file) file = this.file;
-	var tmp_file = backupFileName(file);
-	var board_txt = JSON.stringify(this.board);
-	if (board_txt === "{}") { // empty board
-		try {
-			await fs.promises.unlink(file);
-			log("removed empty board", { 'name': this.name });
-		} catch (err) {
-			if (err.code !== "ENOENT") {
-				// If the file already wasn't saved, this is not an error
-				log("board deletion error", { "e": err })
+	if(SAVE){
+		if (!file) file = this.file;
+		var board_txt = JSON.stringify(this.board);
+		var that = this;
+		fs.writeFile(file, board_txt, function onBoardSaved(err) {
+			if (err) {
+				console.trace(new Error("Unable to save the board: " + err));
+			} else {
+				console.log("Successfully saved board: " + that.name);
 			}
-		}
-	} else {
-		try {
-			await fs.promises.writeFile(tmp_file, board_txt);
-			await fs.promises.rename(tmp_file, file);
-			log("saved board", {
-				'name': this.name,
-				'size': board_txt.length,
-				'delay_ms': (Date.now() - this.lastSaveDate),
-			});
-		} catch (err) {
-			log("board saving error", {
-				'err': err.toString(),
-				'tmp_file': tmp_file,
-			});
-			return;
-		}
+		})
 	}
 };
 
@@ -203,7 +316,7 @@ BoardData.prototype.clean = function cleanBoard() {
 			return (board[x].time | 0) - (board[y].time | 0);
 		}).slice(0, -MAX_ITEM_COUNT);
 		for (var i = 0; i < toDestroy.length; i++) delete board[toDestroy[i]];
-		log("cleaned board", { 'removed': toDestroy.length, "board": this.name });
+		console.log("Cleaned " + toDestroy.length + " items in " + this.name);
 	}
 }
 
@@ -240,37 +353,24 @@ BoardData.prototype.validate = function validate(item, parent) {
 /** Load the data in the board from a file.
  * @param {string} file - Path to the file where the board data will be read.
 */
-BoardData.load = async function loadBoard(name) {
-	var boardData = new BoardData(name), data;
-	try {
-		data = await fs.promises.readFile(boardData.file);
-		boardData.board = JSON.parse(data);
-		for (id in boardData.board) boardData.validate(boardData.board[id]);
-		log('disk load', { 'board': boardData.name });
-	} catch (e) {
-		log('empty board creation', {
-			'board': boardData.name,
-			// If the file doesn't exist, this is not an error
-			"error": e.code !== "ENOENT" && e.toString(),
-		});
-		boardData.board = {}
-		if (data) {
-			// There was an error loading the board, but some data was still read
-			var backup = backupFileName(boardData.file);
-			log("Writing the corrupted file to " + backup);
+BoardData.load = function loadBoard(name) {
+	var boardData = new BoardData(name);
+	return new Promise((accept) => {
+		fs.readFile(boardData.file, function (err, data) {
 			try {
-				await fs.promises.writeFile(backup, data);
-			} catch (err) {
-				log("Error writing " + backup + ": " + err);
+				if (err) throw err;
+				boardData.board = JSON.parse(data);
+				for (id in boardData.board) boardData.validate(boardData.board[id]);
+				console.log(boardData.name + " loaded from file.");
+			} catch (e) {
+				if(SAVE)
+				console.error("Unable to read history from " + boardData.file + ". The following error occured: " + e);
+				console.log("Creating an empty board.");
+				boardData.board = {}
 			}
-		}
-	}
-	return boardData;
+			accept(boardData);
+		});
+	});
 };
-
-function backupFileName(baseName) {
-	var date = new Date().toISOString().replace(/:/g, '');
-	return baseName + '.' + date + '.bak';
-}
 
 module.exports.BoardData = BoardData;

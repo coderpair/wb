@@ -1,12 +1,12 @@
 #textToolInput {
 	position:fixed;
 	top:-1000px; /*Hidden*/
-	left: 80px;
-	width:500px;
+	left:60px;
+	width:250px;
 }
 #textToolInput:focus {
-	top: 5px;
 }
+
 
 text {
 	font-family:"Arial", "Helvetica", sans-serif;

@@ -1,7 +1,7 @@
 ﻿/**
  *                        WHITEBOPHIR
  *********************************************************
- * @licstart  The following is the entire license notice for the
+ * @licstart  The following is the entire license notice for the 
  *  JavaScript code in this page.
  *
  * Copyright (C) 2013  Ophir LOJKINE
@@ -24,39 +24,43 @@
  * @licend
  */
 
-(function () { //Code isolation
+(function clear() { //Code isolation
 
-	var orig = { x: 0, y: 0 };
-	var pressed = false;
-	function press(x, y, evt, isTouchEvent) {
-		if (!isTouchEvent) {
-			pressed = true;
-			orig.x = scrollX + evt.clientX;
-			orig.y = scrollY + evt.clientY;
+
+	var msg = {
+		"type": "clear"
+	};
+
+	function clearBoard(x, y, evt, isTouchEvent) {
+		if($("#menu").width()!=Tools.menu_width)return;
+        	evt.preventDefault();
+		Tools.acceptMsgs = false;
+		Tools.drawAndSend(msg);
+	};
+
+	function draw(data) {
+		var elem;
+		switch (data.type) {
+			//TODO: add the ability to erase only some points in a line
+			case "clear":
+				Tools.clearBoard(false);
+				break;
+			default:
+				console.error("Clear: 'clear' instruction with unknown type. ", data);
+				break;
 		}
 	}
-	function move(x, y, evt, isTouchEvent) {
-		if (pressed && !isTouchEvent) { //Let the browser handle touch to scroll
-			window.scrollTo(orig.x - evt.clientX, orig.y - evt.clientY);
-		}
-	}
-	function release() {
-		pressed = false;
-	}
+
 
 	Tools.add({ //The new tool
-		// "name": "Hand",
-	"icon": "✋",
-        "name": "Hand",
-        //"icon": "",
+		"name": "Clear",
+		"icon": "🗑",
+		//"shortcut": "e",
 		"listeners": {
-			"press": press,
-			"move": move,
-			"release": release
+			"press": clearBoard
 		},
-		"mouseCursor": "move"
+		"draw": draw,
+		"mouseCursor": "crosshair",
 	});
 
-	//The hand tool is selected by default
-	Tools.change("Hand");
 })(); //End of code isolation

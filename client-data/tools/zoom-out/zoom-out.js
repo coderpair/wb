@@ -25,7 +25,6 @@
  */
 
 (function () { //Code isolation
-    var ZOOM_FACTOR = .6;
     var origin = {
         scrollX: window.scrollX,
         scrollY: window.scrollY,
@@ -45,13 +44,7 @@
         );
     }
 
-    var animation = null;
-    function animate(scale) {
-        cancelAnimationFrame(animation);
-        animation = requestAnimationFrame(function () {
-            zoom(origin, scale);
-        });
-    }
+    
 
     function setOrigin(x, y, evt, isTouchEvent) {
         origin.scrollX = window.scrollX;
@@ -60,6 +53,15 @@
         origin.y = y;
         origin.clientY = getClientY(evt, isTouchEvent);
         origin.scale = Tools.getScale();
+    }
+
+    function setHashScale(){
+	var coords = window.location.hash.slice(1).split(',');
+	var x = coords[0] | 0;
+	var y = coords[1] | 0;
+	var scale = Tools.getScale().toFixed(2);
+	var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + scale;
+	window.history.pushState({}, "", hash);
     }
 
     function press(x, y, evt, isTouchEvent) {
@@ -71,35 +73,14 @@
         pressed = true;
     }
 
-    function move(x, y, evt, isTouchEvent) {
-        if (pressed) {
-            evt.preventDefault();
-            var delta = getClientY(evt, isTouchEvent) - origin.clientY;
-            var scale = origin.scale * (1 + delta * ZOOM_FACTOR / 100);
-            if (Math.abs(delta) > 1) moved = true;
-            animation = animate(scale);
-        }
-    }
-
-    function onwheel(evt) {
-        evt.preventDefault();
-        if (evt.ctrlKey) {
-            var scale = Tools.getScale();
-            var x = evt.pageX / scale;
-            var y = evt.pageY / scale;
-            setOrigin(x, y, evt, false);
-            animate((1 - evt.deltaY * ZOOM_FACTOR / 10) * Tools.getScale());
-        } else {
-            window.scrollTo(window.scrollX + evt.deltaX, window.scrollY + evt.deltaY);
-        }
-    }
     Tools.board.addEventListener("wheel", onwheel);
 
     function release(x, y, evt, isTouchEvent) {
         if (pressed && !moved) {
-            var delta = (evt.shiftKey === true) ? -.625 : 1;
-            var scale = Tools.getScale() * (1 + delta * ZOOM_FACTOR);
+	    Tools.scaleIndex=Math.max(Tools.scaleIndex-1,0);
+            var scale = Tools.scaleDefaults[Tools.scaleIndex];
             zoom(origin, scale);
+	    setHashScale();	
         }
         pressed = false;
     }
@@ -129,20 +110,17 @@
     }
 
     Tools.add({ //The new tool
-        // "name": "Zoom",
          "icon": "🔎",
-	"iconFA":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-plus'></i>",
-        "name": "Zoom",
+	"iconFA":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-minus'></i>",
+        "name": "Zoom Out",
         //"icon": "",
         "listeners": {
             "press": press,
-            "move": move,
-            "release": release,
+	    "release": release,
         },
         "onstart": onstart,
         "onquit": onquit,
-        "mouseCursor": "zoom-in",
-	"isExtra":true,
-        "helpText": "Click to zoom in\nPress shift and click to zoom out",
+        "mouseCursor": "zoom-out",
+	"isExtra":true
     });
 })(); //End of code isolation

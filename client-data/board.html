@@ -1,77 +1,102 @@
 <!DOCTYPE html>
-<html lang="{{language}}">
+<html lang="en">
 
 <head>
 	<meta charset="utf-8" />
-	<title>{{board}} | WBO | {{translate translations 'Collaborative whiteboard'}}</title>
+	<title>LCFPrepBoard</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
 	<link rel="stylesheet" type="text/css" href="board.css" />
-	<script src="/socket.io/socket.io.js"></script>
+	<script src="https://kit.fontawesome.com/0166a4ad2b.js" crossorigin="anonymous"></script>
+	<script src="socket.io.js"></script>
 	<meta name="description"
-		content="{{translate translations 'A free and opensource online collaborative drawing tool. Sketch new ideas together on WBO !'}}'" />
+		content="A free and opensource online collaborative drawing tool." />
 	<meta name="keywords"
-		content="{{translate translations 'Collaborative whiteboard'}},online,draw,paint,shared,realtime,wbo,whitebophir" />
+		content="Collaborative whiteboard,online,draw,paint,shared,realtime" />
 	<link rel="apple-touch-icon" href="/favicon.svg">
-	<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0" />
-	<meta property="og:title" content="{{board}} board on WBO" />
-	<meta property="og:url" content="{{baseUrl}}/boards/{{boardUriComponent}}" />
-	<meta property="og:image" content="{{baseUrl}}/preview/{{boardUriComponent}}" />
-	<link rel="canonical" href="{{baseUrl}}/boards/{{boardUriComponent}}?lang={{language}}" />
-	{{#languages}}
-	<link rel="alternate" hreflang="{{.}}" href="{{../baseUrl}}/boards/{{../boardUriComponent}}?lang={{.}}" />
-	{{/languages}}
+<style>
+
+.modal-backdrop
+{
+    opacity:0.25 !important;
+}
+.canvascolor-container{background-color:black;border-radius:5px;overflow:hidden;width:179px;padding:2px;display:none;}.canvascolor-container canvas{cursor:crosshair;}.canvascolor-history{overflow:auto;}.canvascolor-history > div{margin:2px;display:inline-block;}</style></head>
+
 </head>
 
 <body>
-
-	<div id="board">
-		<svg id="canvas" width="500" height="500" version="1.1" xmlns="http://www.w3.org/2000/svg">
-			<defs id="defs"></defs>
+	<script>
+		$(document).ready(function(){
+		  //$('[data-toggle="popover"]').popover(); 
+		});
+		</script>
+	<div id="loadingMessage">Loading</div>
+<div id="board">
+		<svg id="canvas" width="500" height="500" viewBox= "0 0 500 500" + svgHeightversion="1.1" xmlns="http://www.w3.org/2000/svg" >
+			 <defs id="defs">
+      				<pattern id="smallGrid" width="30" height="30" patternUnits="userSpaceOnUse">
+        				<path d="M 30 0 L 0 0 0 30" fill="none" stroke="gray" stroke-width="0.5"/>
+      				</pattern>
+      				<pattern id="grid" width="300" height="300" patternUnits="userSpaceOnUse">
+        				<rect width="300" height="300" fill="url(#smallGrid)"/>
+        				<path d="M 300 0 L 0 0 0 300" fill="none" stroke="gray" stroke-width="1"/>
+      				</pattern>
+    			</defs>
+    			<rect style="display:block" id="rect_1" width="100%" height="100%" fill="url(#grid)" />
+			<cursors id="cursors"></cursors>
+			 <g style="mask: url(#mask-layer-1);" id="layer-1"></g>
 		</svg>
 	</div>
-
-	<div id="loadingMessage">{{translate translations 'Loading'}}</div>
-
 	<div id="menu">
 		<div id="menuItems">
 			<ul id="tools" class="tools">
-				<li class="tool"><span class="tool-icon"></span><span class="tool-name"></span></li>
+				<li class="tool"><span class="tool-icon"></span></li>
 			</ul>
 
 			<ul class="tools" id="settings">
-				<li class="tool">
-					<span class="tool-icon">
-						<input type="color" id="chooseColor" value="#1913B0" />
+		
+				<li class="tool-popout">
+					<span style="outline:none !important" class="tool-icon-popout" tabindex=1 data-trigger="focus" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover">
+						<i style='color: #0074D9;margin-top:7px' class='fas fa-angle-double-right'></i>
 					</span>
-					<label class="tool-name" for="chooseColor">{{translate translations 'Color'}}</label>
-					<span class="colorPresets" id="colorPresetSel">
-						<span class="colorPresetButton"></span>
+					<span class="tool-list" id="tool-list">
+						<div class="tool-extra"><span class="tool-icon"></span></div>
 					</span>
 				</li>
 				<li class="tool">
+					<span class="tool-icon" >
+						<input type="color" style="margin-top:8px" id="chooseColor" value="#1913B0" />
+					</span>
+					<label class="tool-name" for="chooseColor">Color</label>
+					
+				</li>
+				<li class="tool">
 					<span class="tool-icon">
-						<svg viewBox="-60 -60 120 120">
+						<svg viewBox="-60 -70 120 120">
 							<circle id="sizeIndicator" cx=0 cy=0 r=10 /></svg>
 					</span>
 					<label class="tool-name slider" for="chooseSize">
-						<span>{{translate translations 'Size'}}</span>
-						<input type="range" id="chooseSize" value="10" min="1" max="50" step="1" class="rangeChooser" />
+						<span>Size</span>
+						<input type="range" id="chooseSize" value="3" min="1" max="50" step="1" class="rangeChooser" />
 					</label>
 				</li>
 				<li class="tool">
 					<span class="tool-icon">
-						<svg viewBox="0 0 12 12">
+						<svg viewBox="0 0 8 8">
 							<pattern id="opacityPattern" x="0" y="0" width="4" height="4" patternUnits="userSpaceOnUse">
 								<rect x=0 y=0 width=2 height=2 fill=black />
 								<rect x=2 y=2 width=2 height=2 fill=black />
-								<rect x=2 y=0 width=2 height=2 fill=white />
-								<rect x=0 y=2 width=2 height=2 fill=white />
+								<rect x=2 y=0 width=2 height=2 fill=#eee />
+								<rect x=0 y=2 width=2 height=2 fill=#eee />
 							</pattern>
-							<rect id="opacityIndicator" rx=1 width="100%" height="100%" fill="url(#opacityPattern)" />
+							<circle cx=4 cy=4.6 id="opacityIndicator" r=3.5  fill="url(#opacityPattern)" />
 						</svg>
 					</span>
 					<label class="tool-name slider" for="chooseOpacity">
-						<span>{{translate translations 'Opacity'}}</span>
+						<span>Opacity</span>
 						<input type="range" id="chooseOpacity" value="1" min="0.2" max="1" step="0.1"
 							class="rangeChooser" />
 					</label>
@@ -79,9 +104,10 @@
 			</ul>
 		</div>
 	</div>
+	
 
 
-	<script type="application/json" id="translations">{{{json translations}}}</script>
+	<script type="application/json" id="translations">{}</script>
 	<script src="js/path-data-polyfill.js"></script>
 	<script src="js/minitpl.js"></script>
 	<script src="js/board.js"></script>
@@ -91,8 +117,16 @@
 	<script src="tools/text/text.js"></script>
 	<script src="tools/eraser/eraser.js"></script>
 	<script src="tools/hand/hand.js"></script>
-	<script src="tools/zoom/zoom.js"></script>
-	<script src="/js/canvascolor/canvascolor.min.js"></script>
+	<script src="tools/clear/clear.js"></script>
+	<script src="tools/grid/grid.js"></script>
+	<script src="tools/eraser2/eraser2.js"></script>
+	<script src="tools/undo/undo.js"></script>
+	<script src="tools/redo/redo.js"></script>
+	<script src="tools/zoom-in/zoom-in.js"></script>
+        <script src="tools/zoom-out/zoom-out.js"></script>
+	<script src="js/canvascolor/canvascolor.min.js"></script>
+
 </body>
 
+</html>
 </html>

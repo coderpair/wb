@@ -1,7 +1,7 @@
-/**
+﻿/**
  *                        WHITEBOPHIR
  *********************************************************
- * @licstart  The following is the entire license notice for the 
+ * @licstart  The following is the entire license notice for the
  *  JavaScript code in this page.
  *
  * Copyright (C) 2013  Ophir LOJKINE
@@ -28,27 +28,51 @@
 
 	//Indicates the id of the line the user is currently drawing or an empty string while the user is not drawing
 	var curLineId = "",
-		lastTime = performance.now(); //The time at which the last point was drawn
-
+	     	penIcons = ["✏","W"],
+		lastTime = performance.now(), //The time at which the last point was drawn
+		end=false;
+	var curPen = {
+		"mode":"Pencil",
+		"penSize":3,
+		"eraserSize":16
+	};
 	//The data of the message that will be sent for every new point
 	function PointMessage(x, y) {
 		this.type = 'child';
 		this.parent = curLineId;
-		this.x = x;
-		this.y = y;
+		this.x = x-(Tools.showMarker?25:0);
+		this.y = y-(Tools.showMarker?25:0);
 	}
 
-	function startLine(x, y, evt) {
+	function onStart(){
+		if(curPen.mode=="White out"){
+			Tools.setSize(curPen.eraserSize);
+			Tools.showMarker=true;
+		}
+	};
 
+	function onQuit(){
+		if(curPen.mode=="White out"){
+			Tools.setSize(curPen.penSize);
+		}
+		Tools.showMarker=false;
+		var cursor = Tools.svg.getElementById("mycursor");
+		if(cursor){
+			cursor.remove();
+		}
+	};
+
+
+	function startLine(x, y, evt) {
 		//Prevent the press from being interpreted by the browser
-		evt.preventDefault();
+		//evt.preventDefault();
 
 		curLineId = Tools.generateUID("l"); //"l" for line
 
 		Tools.drawAndSend({
 			'type': 'line',
 			'id': curLineId,
-			'color': Tools.getColor(),
+			'color': (curPen.mode=="Pencil"?Tools.getColor():"white"),
 			'size': Tools.getSize(),
 			'opacity': Tools.getOpacity()
 		});
@@ -58,9 +82,9 @@
 	}
 
 	function continueLine(x, y, evt) {
-		/*Wait 70ms before adding any point to the currently drawing line.
+		/*Wait 20ms before adding any point to the currently drawing line.
 		This allows the animation to be smother*/
-		if (curLineId !== "" && performance.now() - lastTime > 70) {
+		if (curLineId !== "" && (performance.now() - lastTime > 20 || end)) {
 			Tools.drawAndSend(new PointMessage(x, y));
 			lastTime = performance.now();
 		}
@@ -69,12 +93,15 @@
 
 	function stopLine(x, y) {
 		//Add a last point to the line
+		end=true;
 		continueLine(x, y);
+		end=false;
 		curLineId = "";
 	}
 
 	var renderingLine = {};
 	function draw(data) {
+		Tools.drawingEvent=true;
 		switch (data.type) {
 			case "line":
 				renderingLine = createLine(data);
@@ -83,8 +110,15 @@
 				var line = (renderingLine.id == data.parent) ? renderingLine : svg.getElementById(data.parent);
 				if (!line) {
 					console.error("Pencil: Hmmm... I received a point of a line that has not been created (%s).", data.parent);
-					line = renderingLine = createLine({ "id": data.parent }); //create a new line in order not to loose the points
-				}
+					return false;
+				}else{
+					if(Tools.useLayers){
+						if(line.getAttribute("class")!="layer"+Tools.layer){
+							line.setAttribute("class","layer-"+Tools.layer);
+							Tools.group.appendChild(line);
+						}
+					}
+				};
 				addPoint(line, data.x, data.y);
 				break;
 			case "endline":
@@ -101,12 +135,11 @@
 		return Math.hypot(x2 - x1, y2 - y1);
 	}
 
-	var pathDataCache = {};
 	function getPathData(line) {
-		var pathData = pathDataCache[line.id];
+		var pathData = Tools.pathDataCache[line.id];
 		if (!pathData) {
 			pathData = line.getPathData();
-			pathDataCache[line.id] = pathData;
+			Tools.pathDataCache[line.id] = pathData;
 		}
 		return pathData;
 	}
@@ -179,21 +212,48 @@
 		//If some data is not provided, choose default value. The line may be updated later
 		line.setAttribute("stroke", lineData.color || "black");
 		line.setAttribute("stroke-width", lineData.size || 10);
+		if(Tools.useLayers)
+		line.setAttribute("class","layer-"+Tools.layer);
 		line.setAttribute("opacity", Math.max(0.1, Math.min(1, lineData.opacity)) || 1);
-		svg.appendChild(line);
+		Tools.group.appendChild(line);
 		return line;
 	}
 
+
+	function toggle(elem){
+		var index = 0;
+		if(curPen.mode=="Pencil"){
+			curPen.mode="White out"
+			curPen.penSize=Tools.getSize();
+			Tools.setSize(curPen.eraserSize);
+			Tools.showMarker=true;
+			index=1;
+		}else{
+			curPen.mode="Pencil"
+			curPen.erasurSize=Tools.getSize();
+			Tools.setSize(curPen.penSize);
+			Tools.showMarker=false;
+			var cursor = Tools.svg.getElementById("mycursor");
+			if(cursor){
+				cursor.remove();
+			}
+		}
+		elem.getElementsByClassName("tool-icon")[0].textContent = penIcons[index];
+	};
+
 	Tools.add({ //The new tool
-		"name": "Pencil",
-		"icon": "✏",
-		"shortcut": "p",
+		// "name": "Pencil",
+		 "icon": "✏",
+        "name": "Pencil",
 		"listeners": {
 			"press": startLine,
 			"move": continueLine,
 			"release": stopLine,
 		},
 		"draw": draw,
+		"toggle":toggle,
+		"onstart":onStart,
+		"onquit":onQuit,
 		"mouseCursor": "crosshair",
 		"stylesheet": "tools/pencil/pencil.css"
 	});
