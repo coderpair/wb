@@ -29,12 +29,10 @@ If you have your own web server, and want to run a private instance of WB on it,
 
 ### Running the code
 
-Alternatively, you can run the code with [node.js](https://nodejs.org/) directly, without docker.
-
 First, download the sources:
 ```
 git clone git@github.com:rdbeach/wb.git
-cd whitebophir
+cd wb
 ```
 
 Then [install node.js](https://nodejs.org/en/download/) if you don't have it already, then install WB's dependencies:
