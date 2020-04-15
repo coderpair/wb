@@ -75,27 +75,17 @@
 			if(erasing){
 				for(var i = -1;i<2;i++){
 					for(var j = -1;j<2;j++){
-						target=document.elementFromPoint((x+i-document.documentElement.scrollLeft)*Tools.scale, (y+j-document.documentElement.scrollTop)*Tools.scale);
-						if (target && target !== Tools.svg) {
-							msg.id = target.id;
-							msg.x = x+i;
-							msg.y = y+j;
-							msg.target = target;
-							if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
-								elem = svg.getElementById(msg.id);
-								if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-								else{
-									var layer;
-									var c = elem.getAttribute("class");
-									if(c && c.startsWith("layer-")){
-										layer = parseInt(c.substr(6));
-										if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
-									}
-								}
-							}
-						}
+						scanForObject(x,y,target,i,j);
 					}
 				}
+				scanForObject(x,y,target,-2,0);
+				scanForObject(x,y,target, 2,0);
+				scanForObject(x,y,target,-3,0);
+				scanForObject(x,y,target, 3,0);
+				scanForObject(x,y,target, 0,-2);
+				scanForObject(x,y,target, 0,2);
+				scanForObject(x,y,target, 0,-3);
+				scanForObject(x,y,target, 0,3);
 			}
 
 		}
@@ -118,6 +108,28 @@
 				console.error("Eraser: 'delete' instruction with unknown type. ", data);
 				break;
 		}
+	}
+
+	function scanForObject(x,y,target, i,j){
+		target=document.elementFromPoint((x+i-document.documentElement.scrollLeft)*Tools.scale, (y+j-document.documentElement.scrollTop)*Tools.scale);
+						if (target && target !== Tools.svg) {
+							msg.id = target.id;
+							msg.x = x+i;
+							msg.y = y+j;
+							msg.target = target;
+							if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
+								elem = svg.getElementById(msg.id);
+								if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
+								else{
+									var layer;
+									var c = elem.getAttribute("class");
+									if(c && c.startsWith("layer-")){
+										layer = parseInt(c.substr(6));
+										if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
+									}
+								}
+							}
+						}
 	}
 
 	function segIsWithinRofPt(x, y, x1, y1, x2, y2, r) {

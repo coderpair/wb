@@ -1,9 +1,11 @@
-# WBO
+# WB
 
-WBO is an online collaborative whiteboard that allows many users to draw simultaneously on a large virtual board.
-The board is updated in real time for all connected users, and its state is always persisted. It can be used for many different purposes, including art, entertainment, design, teaching.
+WB is an online collaborative whiteboard focusing primarily on the needs of online teachers/students.
 
-A demonstration server is available at [wbo.ophir.dev](https://wbo.ophir.dev)
+
+This board is an extension of the [lovasoa/whitebophir](https://github.com/lovasoa/whitebophir) project.
+
+A demonstration server is available at [lcfprep.com/wb/wb.html](https://lcfprep.com/wb/wb.html)
 
 ## Screenshots
 
@@ -21,38 +23,19 @@ A demonstration server is available at [wbo.ophir.dev](https://wbo.ophir.dev)
    <td> <img alt="angel drawn on WBO" width="300" src="https://user-images.githubusercontent.com/552629/59914139-08404100-941a-11e9-9c29-bd2569fe4730.png"/>
 </table>
 
-## Running your own instance of WBO
+## Running your own instance of WB
 
-If you have your own web server, and want to run a private instance of WBO on it, you can. It should be very easy to get it running on your own server.
+If you have your own web server, and want to run a private instance of WB on it, you can. It should be very easy to get it running on your own server.
 
-### Running the code in a container (safer)
-
-If you use the [docker](https://www.docker.com/) containerization service, you can easily run WBO as a container. 
-An official docker image for WBO is hosted on dockerhub as [`lovasoa/wbo`](https://hub.docker.com/repository/docker/lovasoa/wbo).
-
-You can run it with the following command :
-
-```
-docker run -it --publish 5001:80 --volume $(pwd)/wbo-boards:/opt/app/server-data lovasoa/wbo:latest
-```
-
-This will run WBO :
- - on port 5001
- - persisting the user data in `$(pwd)/wbo-boards`
-
-You can then access WBO at `http://localhost:5001`.
-
-### Running the code without a container
-
-Alternatively, you can run the code with [node.js](https://nodejs.org/) directly, without docker.
+### Running the code
 
 First, download the sources:
 ```
-git clone git@github.com:lovasoa/whitebophir.git
-cd whitebophir
+git clone git@github.com:rdbeach/wb.git
+cd wb
 ```
 
-Then [install node.js](https://nodejs.org/en/download/) if you don't have it already, then install WBO's dependencies:
+Then [install node.js](https://nodejs.org/en/download/) if you don't have it already, then install WB's dependencies:
 ```
 npm install
 ```
@@ -62,10 +45,8 @@ Finally, you can start the server:
 PORT=5001 npm start
 ```
 
-This will run WBO directly on your machine, on port 5001, without any isolation from the other services.
+This will run WB directly on your machine, on port 5001, without any isolation from the other services.
 
 ## Troubleshooting
 
-If you experience an issue or want to propose a new feature in WBO, please [open a github issue](https://github.com/lovasoa/whitebophir/issues/new).
-
-<small>Demonstration server hosted by [openode](https://www.openode.io/)</small>
+If you experience an issue or want to propose a new feature in WB, please [open a github issue](https://github.com/rdbeach/wb/issues/new).
