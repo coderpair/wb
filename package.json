@@ -14,13 +14,12 @@
       "start": "node ./server/server.js",
       "deploy": "openode deploy"
    },
-   "name": "whitebophir",
+   "name": "wb",
    "description": "Online collaborative whiteboard",
    "main": "./server/server.js",
-   "subdomain": "wbo",
    "repository": {
       "type": "git",
-      "url": "http://github.com/lovasoa/whitebophir.git"
+      "url": "http://github.com/rdbeach/wb.git"
    },
    "devDependencies": {
       "openode": "^2.0.17"
