@@ -86,6 +86,14 @@
 				scanForObject(x,y,target, 0,2);
 				scanForObject(x,y,target, 0,-3);
 				scanForObject(x,y,target, 0,3);
+				scanForObject(x,y,target,-4,0);
+				scanForObject(x,y,target, 4,0);
+				scanForObject(x,y,target,-5,0);
+				scanForObject(x,y,target, 5,0);
+				scanForObject(x,y,target, 0,-4);
+				scanForObject(x,y,target, 0,4);
+				scanForObject(x,y,target, 0,-5);
+				scanForObject(x,y,target, 0,5);
 			}
 
 		}
