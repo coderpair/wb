@@ -14,7 +14,7 @@
       "start": "node ./server/server.js",
       "deploy": "openode deploy"
    },
-   "name": "wb",
+   "name": "wb-rdbeach",
    "description": "Online collaborative whiteboard",
    "main": "./server/server.js",
    "repository": {
