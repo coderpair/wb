@@ -34,7 +34,7 @@ If you have your own web server, and want to run a private instance of WB on it,
 
 ### Running the code
 
-First, download the sources:
+First, download the source and go to the wb dir:
 ```
 git clone git@github.com:rdbeach/wb.git
 cd wb
@@ -47,10 +47,18 @@ npm install
 
 Finally, you can start the server:
 ```
-PORT=5001 npm start
+PORT=8080 npm start
 ```
 
-This will run WB directly on your machine, on port 5001, without any isolation from the other services.
+This will run WB directly on your machine, on port 8080, without any isolation from the other services.
+
+IF you want to run on a different port, you will need to change the line above, and modify this line in /client-data/js/board.js:
+
+```
+this.socket = io.connect(':8080', {
+```
+
+Finally, add the client-data to your site and point your browser toward board.html.
 
 ## Troubleshooting
 
