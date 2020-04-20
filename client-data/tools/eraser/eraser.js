@@ -109,7 +109,7 @@
 	}
 
 	function scanForObject(x,y,target, i,j){
-		target=document.elementFromPoint((x+i)*Tools.scale-document.documentElement.scrollLeft, (y+j)*Tools.scale-document.documentElement.scrollTop);
+		target=document.elementFromPoint((x*Tools.scale)+i-document.documentElement.scrollLeft, (y*Tools.scale)+j-document.documentElement.scrollTop);
 
 		if (target && target !== Tools.svg) {
 			msg.id = target.id;
