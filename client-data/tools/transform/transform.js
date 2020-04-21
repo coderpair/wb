@@ -190,9 +190,32 @@
 		switch (data.type) {
 			//TODO: add the ability to erase only some points in a line
 			case "update":
-			if(Array.isArray(data.id)){
-				for(var i = 0; i<data.id.length;i++){
-					var elem = svg.getElementById(data.id[i]);
+				if(Array.isArray(data.id)){
+					for(var i = 0; i<data.id.length;i++){
+						var elem = svg.getElementById(data.id[i]);
+						//check if top layer
+						if(Tools.useLayers){
+							if(elem.getAttribute("class")!="layer"+Tools.layer){
+								elem.setAttribute("class","layer-"+Tools.layer);
+								Tools.group.appendChild(elem);
+							}
+						}
+						var idSelected = false;
+						if(currShape){
+							if(Array.isArray(currShape)){
+								idSelected = arrayContains(currShape.id,data.id[i])
+							}else{
+								idSelected = (currShape.id==data.id[i]);
+							}
+						}
+						if (!(transforming&&idSelected||elem === null)){ //console.error("Eraser: Tried to delete an element that does not exist.");
+							if (idSelected) deactivateCurrentShape();
+							//console.log(data.transform);
+							elem.setAttribute("transform", data.transform[i]);
+						}
+					}
+				}else{
+					var elem = svg.getElementById(data.id);
 					//check if top layer
 					if(Tools.useLayers){
 						if(elem.getAttribute("class")!="layer"+Tools.layer){
@@ -203,38 +226,16 @@
 					var idSelected = false;
 					if(currShape){
 						if(Array.isArray(currShape)){
-							idSelected = arrayContains(currShape.id,data.id[i])
+							idSelected = arrayContains(currShape.id,data.id)
 						}else{
-							idSelected = (currShape.id==data.id[i]);
+							idSelected = (currShape.id==data.id);
 						}
 					}
 					if (transforming&&idSelected||elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-					if (idSelected) deactivateCurrentShape();
-					//console.log(data.transform);
-					elem.setAttribute("transform", data.transform[i]);
+						if (idSelected) deactivateCurrentShape();
+						//console.log(data.transform);
+						elem.setAttribute("transform", data.transform);
 				}
-			}else{
-				var elem = svg.getElementById(data.id);
-				//check if top layer
-				if(Tools.useLayers){
-					if(elem.getAttribute("class")!="layer"+Tools.layer){
-						elem.setAttribute("class","layer-"+Tools.layer);
-						Tools.group.appendChild(elem);
-					}
-				}
-				var idSelected = false;
-				if(currShape){
-					if(Array.isArray(currShape)){
-						idSelected = arrayContains(currShape.id,data.id)
-					}else{
-						idSelected = (currShape.id==data.id);
-					}
-				}
-				if (transforming&&idSelected||elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-				if (idSelected) deactivateCurrentShape();
-				//console.log(data.transform);
-				elem.setAttribute("transform", data.transform);
-			}
 				break;
 			default:
 				console.error("Eraser: 'delete' instruction with unknown type. ", data);

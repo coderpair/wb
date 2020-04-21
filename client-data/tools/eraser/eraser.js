@@ -217,8 +217,9 @@
 				if(Array.isArray(data.id)){
 					for(var i = 0;i<data.id.length;i++){
 						elem = svg.getElementById(data.id[i]);
-						if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-						elem.remove();
+						if (elem !== null){ //console.error("Eraser: Tried to delete an element that does not exist.");
+							elem.remove();
+						}
 					}
 				}else{
 					elem = svg.getElementById(data.id);
