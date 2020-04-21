@@ -68,7 +68,7 @@
 			Tools.svg.appendChild(shape);
 			if(!textElem){
 				textElem = Tools.createSVGElement("text");
-				textElem.setAttribute("x", -100);
+				textElem.setAttribute("x", -1000);
 				textElem.setAttribute("y", 100);
 				
 				textElem.setAttribute("font-size", 32);
@@ -98,7 +98,7 @@
 				end=false;
 				var shape = svg.getElementById("erase-rect");	
 				shape.remove();
-				textElem.setAttribute("x", -100);
+				textElem.setAttribute("x", -1000);
 				textElem.setAttribute("y", 100);
 				makeRect = false;
 				var targets = [];
@@ -156,7 +156,7 @@
 						textElem.setAttribute("x", shape.x.baseVal.value+shape.width.baseVal.value/2-60);
 						textElem.setAttribute("y", shape.y.baseVal.value+shape.height.baseVal.value/2+14);
 					}else{
-						textElem.setAttribute("x", -100);
+						textElem.setAttribute("x", -1000);
 						textElem.setAttribute("y",100);
 					}
 					lastTime = performance.now();
