@@ -53,7 +53,7 @@
 	Tools.add({ //The new tool
 		"name": "Redo",
 		"icon": "🗑",
-		"iconFA":"<i style='color: #3D9970;margin-top:7px' class='fas fa-redo-alt'></i>",
+		"iconHTML":"<i style='color: #3D9970;margin-top:7px' class='fas fa-redo-alt'></i>",
 		//"shortcut": "e",
 		"listeners": {
 			"press": redo

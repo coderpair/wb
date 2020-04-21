@@ -99,15 +99,63 @@ BoardData.prototype.addChild = function (parentId, child) {
  * @param {boolean} create - True if the object should be created if it's not currently in the DB.
 */
 BoardData.prototype.update = function (id, newData, create) {
-	var data = this.board[id];
-	if (typeof data !== "object"){
-		return;
-	}
-	for (var i in newData) {
-		data[i] = newData[i];
-	}
 	
-	this.formatAndSave(data,true);
+	if(Array.isArray(id)){
+		var save = false;
+		var oldTransform = [];
+		for(var i = 0;i<id.length;i++){
+			var data = this.board[id[i]];
+			if (typeof data == "object"){
+				save=true;
+				oldTransform[i]=data["transform"];
+			}
+		}
+		if(save){
+			this.updateActionListTransform(id,newData,oldTransform);
+			for(var i = 0;i<id.length;i++){
+				var data = this.board[id[i]];
+				if (typeof data == "object"){
+					data["transform"] = newData.transform[i];
+				}
+			}
+			this.formatAndSave(data,true)
+		}
+	}else{
+		var data = this.board[id];
+		if (typeof data !== "object"){
+			return;
+		}
+		if(newData["transform"]){
+			this.updateActionListTransform(id,newData,data["transform"]);
+		}
+		for (var i in newData) {
+			if(i!="tool")
+			data[i] = newData[i];
+			
+		}
+		this.formatAndSave(data,true);
+	}
+
+};
+
+/** Update group transform
+ * @param {string} id - Identifier of the data to delete.
+ */
+BoardData.prototype.updateActionListTransform = function (id,newData,oldTransform) {
+	var lastEvent = null
+	for(var i = 0;i<this.actionHistory.length;i++){
+		if(this.actionHistory[i].gid&&this.actionHistory[i].gid==newData.gid){
+			lastEvent=this.actionHistory[i];
+			this.actionHistory.splice(i, 1);
+    		this.actionHistory.push(lastEvent);
+		}
+	}
+	if(lastEvent){
+		lastEvent.transform=newData["transform"]
+	}else{
+		this.actionHistory.push({type:'U',id:id,gid:newData.gid,tranform:newData["transform"],oldTransform:oldTransform});
+		this.undoHistory = [];
+	}	
 };
 
 /** Removes data from the board
@@ -115,11 +163,26 @@ BoardData.prototype.update = function (id, newData, create) {
  */
 BoardData.prototype.delete = function (id,data) {
 	//KISS
-	if(this.board[id]){
-		this.actionHistory.push({type:'R',data:this.board[id]});
-		this.undoHistory = [];
-		delete this.board[id];
-		this.delaySave();
+	if(Array.isArray(id)){
+		var removed = [];
+		for(var i = 0;i<id.length;i++){
+			if(this.board[id[i]]){
+				removed.push(this.board[id[i]]);
+				delete this.board[id[i]];
+			}
+		}
+		if(removed.length>0){
+			this.actionHistory.push({type:'BR',data:removed});
+			this.undoHistory = [];
+			this.delaySave();
+		}
+	}else{
+		if(this.board[id]){
+			this.actionHistory.push({type:'R',data:this.board[id]});
+			this.undoHistory = [];
+			delete this.board[id];
+			this.delaySave();
+		}
 	}
 };
 
@@ -159,6 +222,30 @@ BoardData.prototype.undo = function () {
 			case "A":
 				delete this.board[lastEvent.data.id];
 				break;
+			case "BR":
+				for(var i = 0;i<lastEvent.data.length;i++){
+					this.board[lastEvent.data[i].id]=lastEvent.data[i];
+				}
+				break;
+			case "U":
+				if(Array.isArray(lastEvent.id)){
+					for(var i = 0;i<lastEvent.id.length;i++){
+						var data = this.board[lastEvent.id[i]];
+						if (typeof data == "object"){
+							data.transform=lastEvent.oldTransform[i];
+							if(!data.transform){
+								delete this.board[lastEvent.id[i]]["transform"]
+							}
+						}
+					}
+				}else{
+					if(lastEvent.oldTransform){
+						this.board[lastEvent.id]["transform"]=lastEvent.oldTransform;
+					}else{
+						delete this.board[lastEvent.id]["transform"];
+					}
+				}
+				break;
 			default:
 				break;
 		}
@@ -187,6 +274,25 @@ BoardData.prototype.redo = function () {
 				break;
 			case "R":
 				delete this.board[lastEvent.data.id];
+				break;
+			case "BR":
+				for(var i = 0;i<lastEvent.data.length;i++){
+					delete this.board[lastEvent.data[i].id];
+				}
+				break;
+			case "U":
+				if(Array.isArray(lastEvent.id)){
+					for(var i = 0;i<lastEvent.id.length;i++){
+						var data = this.board[lastEvent.id[i]];
+						if (typeof data == "object"){
+							data.transform=lastEvent.transform[i];
+						}
+					}
+				}else{
+					
+					this.board[lastEvent.id]["transform"]=lastEvent.transform;
+					
+				}
 				break;
 			default:
 				break;

@@ -28,69 +28,185 @@
 
 	var erasing = false;
 
-	function startErasing(x, y, evt) {
-		//Prevent the press from being interpreted by the browser
-		evt.preventDefault();
-		erasing = true;
-		erase(x, y, evt);
-	}
+	
+	var currShape = null;
+	var curTool = "single";
+	var icons = ["<i style='color: #e75480;margin-top:7px' class='fas fa-skull-crossbones'></i>","<i style='color: black;margin-top:7px' class='fas fa-skull-crossbones'></i>",];
+	var end = false;
+	var lastTime = performance.now(); //The time at which the last point was drawn
+	var makeRect = false;
+	var textElem;
 
 	var msg = {
 		"type": "delete",
-		"id": "",
+		"id": null,
 		"x":0,
 		"y":0
 	};
-	function erase(x, y, evt) {
-		// evt.target should be the element over which the mouse is...
-		//console.log(evt.target.id);
-		var target = evt.target;
 
-		if (evt.type === "touchmove") {
-			// ... the target of touchmove events is the element that was initially touched,
-			// not the one **currently** being touched
-			var touch = evt.touches[0];
-			target = document.elementFromPoint(touch.clientX, touch.clientY);
+	var rect = {
+		x:0,
+		y:0,
+		x2:0,
+		y2:0
+	};
+
+	function startErasing(x, y, evt) {
+
+		//Prevent the press from being interpreted by the browser
+		evt.preventDefault();
+		if(curTool=="multi"){
+			var shape  = Tools.createSVGElement("rect");
+				
+			shape.id = "erase-rect";
+			
+			shape.setAttribute("stroke", "red");
+			shape.setAttribute("fill", "gray");
+			shape.setAttribute("stroke-width",1);
+			shape.setAttribute("fill-opacity",.1);
+			Tools.createSVGElement("text");
+			Tools.svg.appendChild(shape);
+			if(!textElem){
+				textElem = Tools.createSVGElement("text");
+				textElem.setAttribute("x", -100);
+				textElem.setAttribute("y", 100);
+				
+				textElem.setAttribute("font-size", 32);
+				textElem.setAttribute("fill", "black");
+				textElem.setAttribute("opacity",.1);
+				textElem.textContent = "Kaboom!";
+				Tools.svg.appendChild(textElem);
+			}
+			rect.x = x;
+			rect.y = y;
+			makeRect = true;
+		}else{
+			erasing = true;
+			erase(x, y, evt);
 		}
-		if(false || evt.type === "touchmove"){
-			if (erasing && target !== Tools.svg && target.id) {
-				msg.id = target.id;
-				msg.x = x;
-				msg.y = y;
-				msg.target = target;
-				if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
-					elem = svg.getElementById(msg.id);
-					if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-					else{
-						var layer;
-						var c = elem.getAttribute("class");
-						if(c && c.startsWith("layer-")){
-							layer = parseInt(c.substr(6));
-							if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
+		
+	}
+
+
+
+	function stopErasing(x, y) {
+		if(curTool=="multi"){
+			//Add a last point to the shape
+			if(makeRect){
+				end=true;
+				erase(x, y);
+				end=false;
+				var shape = svg.getElementById("erase-rect");	
+				shape.remove();
+				textElem.setAttribute("x", -100);
+				textElem.setAttribute("y", 100);
+				makeRect = false;
+				var targets = [];
+				var rx = rect.x*Tools.scale-document.documentElement.scrollLeft;
+				var rx2 = rect.x2*Tools.scale-document.documentElement.scrollLeft;
+				var ry = rect.y*Tools.scale-document.documentElement.scrollTop;
+				var ry2 = rect.y2*Tools.scale-document.documentElement.scrollTop;
+				$("#layer-"+Tools.layer).find("*").each(
+					function( i, el ) {
+						var r = el.getBoundingClientRect();
+						if(insideRect(r.x,r.y,r.width,r.height,rx,ry,rx2,ry2)){
+							targets.push(el);
 						}
 					}
+				);
+				if(targets.length>0){
+					msg.id = [];
+					for(var i = 0;i<targets.length;i++){
+						msg.id.push(targets[i].id);
+						
+					};
+					Tools.drawAndSend(msg);
 				}
 			}
 		}else{
-			if(erasing){
-				for(var i = -1;i<2;i++){
-					for(var j = -1;j<2;j++){
-						scanForObject(x,y,target,i,j);
-					}
-				}
-				for(var i = 2; i<7;i++){
-					scanForObject(x,y,target,0,i);
-					scanForObject(x,y,target,i,0);
-					scanForObject(x,y,target,0,-i);
-					scanForObject(x,y,target,-i,0);
-				}
-			}
-
+			erasing = false;
+			
 		}
 	}
 
-	function stopErasing() {
-		erasing = false;
+	function insideRect(x,y,w,h,rx,ry,rx2,ry2){
+		if(rx<=x&&ry<=y){
+			if(rx2>=x+w&&ry2>=y+h){
+				if(rx2>rx&&ry2>ry){
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+
+	
+	function erase(x, y, evt) {
+		if(curTool=="multi"){
+			if(makeRect){
+				rect['x2'] = x; rect['y2'] = y;
+				if (performance.now() - lastTime > 20|| end) {
+					var shape = svg.getElementById("erase-rect");
+					shape.x.baseVal.value = Math.min(rect['x2'], rect['x']);
+					shape.y.baseVal.value = Math.min(rect['y2'], rect['y']);
+					shape.width.baseVal.value = Math.abs(rect['x2'] - rect['x']);
+					shape.height.baseVal.value = Math.abs(rect['y2'] - rect['y']);
+					if(shape.width.baseVal.value>150&&shape.height.baseVal.value>150){
+						textElem.setAttribute("x", shape.x.baseVal.value+shape.width.baseVal.value/2-60);
+						textElem.setAttribute("y", shape.y.baseVal.value+shape.height.baseVal.value/2+14);
+					}else{
+						textElem.setAttribute("x", -100);
+						textElem.setAttribute("y",100);
+					}
+					lastTime = performance.now();
+				}
+				if (evt) evt.preventDefault();
+			}
+		}else{
+			// evt.target should be the element over which the mouse is...
+			var target = evt.target;
+			if (evt.type === "touchmove") {
+				// ... the target of touchmove events is the element that was initially touched,
+				// not the one **currently** being touched
+				var touch = evt.touches[0];
+				target = document.elementFromPoint(touch.clientX, touch.clientY);
+			}
+			if(false || evt.type === "touchmove"){
+				if (erasing && target !== Tools.svg && target.id) {
+					msg.id = target.id;
+					msg.x = x;
+					msg.y = y;
+					msg.target = target;
+					if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
+						var elem = svg.getElementById(msg.id);
+						if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
+						else{
+							var layer;
+							var c = elem.getAttribute("class");
+							if(c && c.startsWith("layer-")){
+								layer = parseInt(c.substr(6));
+								if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
+							}
+						}
+					}
+				}
+			}else{
+				if(erasing){
+					for(var i = -1;i<2;i++){
+						for(var j = -1;j<2;j++){
+							scanForObject(x,y,target,i,j);
+						}
+					}
+					for(var i = 2; i<7;i++){
+						scanForObject(x,y,target,0,i);
+						scanForObject(x,y,target,i,0);
+						scanForObject(x,y,target,0,-i);
+						scanForObject(x,y,target,-i,0);
+					}
+				}
+			}
+		}
 	}
 
 	function draw(data) {
@@ -98,9 +214,17 @@
 		switch (data.type) {
 			//TODO: add the ability to erase only some points in a line
 			case "delete":
-				elem = svg.getElementById(data.id);
-				if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-				elem.remove();
+				if(Array.isArray(data.id)){
+					for(var i = 0;i<data.id.length;i++){
+						elem = svg.getElementById(data.id[i]);
+						if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
+						elem.remove();
+					}
+				}else{
+					elem = svg.getElementById(data.id);
+					if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
+					elem.remove();
+				}
 				break;
 			default:
 				console.error("Eraser: 'delete' instruction with unknown type. ", data);
@@ -111,14 +235,13 @@
 	function scanForObject(x,y,target, i,j){
 		target=document.elementFromPoint((x+i)*Tools.scale-document.documentElement.scrollLeft, (y+j)*Tools.scale-document.documentElement.scrollTop);
 
-
 		if (target && target !== Tools.svg) {
 			msg.id = target.id;
 			msg.x = x+i;
 			msg.y = y+j;
 			msg.target = target;
 			if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
-				elem = svg.getElementById(msg.id);
+				var elem = svg.getElementById(msg.id);
 				if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
 				else{
 					var layer;
@@ -205,41 +328,27 @@
 				}
 			}
 		}
-		// x1 y1 x2 y2
-		//See if the xi's are out of bounds
-		//see if the yi's are out of bounds
-		//check the distance from the given point to the two segment endpoints
-		//compute the y intercepts of segment endpoints to see if they are in bounds (special case for vertical line)
-		//compute the minimal distance to the line
-		/*
-		for(var i = 0; i<Tools.eraserRecords.length;i++){
-			var c = Math.pow(Tools.eraserRecords[i].r,2);
-			var b = Math.pow(Tools.eraserRecords[i].x-x,2);
-			if(c>=b){
-				if(c>=b+Math.pow(Tools.eraserRecords[i].y-y,2)){
-					if(target.getAttribute){
-						var mask = target.getAttribute("mask");
-						if(mask){
-							var maskNum = parseInt(mask.substr(15,mask.length - 1));
-							console.log(maskNum + " " + Tools.eraserRecords[i].mask);
-							if(maskNum<Tools.eraserRecords[i].mask){
-								return false;
-							}
-						}
-					}
-				}
-			}
-		}
-		*/
 		return true;
 	}
 	var svg = Tools.svg;
 
+	function toggle(elem){
+		var index = 0;
+		if(curTool=="single"){
+			curTool="multi";
+			index=1;
+		}else{
+			curTool="single";
+		}
+			elem.getElementsByClassName("tool-icon")[0].innerHTML = icons[index];
+	};
+
 	Tools.add({ //The new tool
 		"name": "Remove",
 		"icon": "?",
-		"iconFA":"<i style='color: darkred;margin-top:7px' class='fas fa-skull-crossbones'></i>",
+		"iconHTML":icons[0],
 		//"shortcut": "e",
+		"toggle":toggle,
 		"listeners": {
 			"press": startErasing,
 			"move": erase,

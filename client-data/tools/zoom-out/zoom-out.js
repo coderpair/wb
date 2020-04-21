@@ -73,7 +73,7 @@
         pressed = true;
     }
 
-    Tools.board.addEventListener("wheel", onwheel);
+    Tools.board.addEventListener("wheel", onwheel,{ 'passive': false });
 
     function release(x, y, evt, isTouchEvent) {
         if (pressed && !moved) {
@@ -111,7 +111,7 @@
 
     Tools.add({ //The new tool
          "icon": "🔎",
-	"iconFA":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-minus'></i>",
+	"iconHTML":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-minus'></i>",
         "name": "Zoom Out",
         //"icon": "",
         "listeners": {

@@ -24,10 +24,9 @@
  * @licend
  */
 
+
 var Tools = {};
 var svgWidth, svgHeight;
-
-
 
 Tools.board = document.getElementById("board");
 Tools.svg = document.getElementById("canvas");
@@ -109,7 +108,10 @@ Tools.boardName = (function () {
 
 
 //Turn on the cursor tracking
-Tools.board.addEventListener("mousemove", function(evt){
+Tools.svg.addEventListener("mousemove", handleMarker, false);
+Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
+
+function handleMarker(evt){
 	var message = {
 		"board": Tools.boardName,
 		"data": {
@@ -123,7 +125,7 @@ Tools.board.addEventListener("mousemove", function(evt){
 		moveMarker(message.data);
 	}
 	
-});
+};
 
 
 
@@ -190,7 +192,7 @@ Tools.clearBoard = function(deleteMsgs){
 Tools.HTML = {
 	template: new Minitpl("#tools > .tool"),
 	templateExtra: new Minitpl("#tool-list > .tool-extra"),
-	addTool: function (toolName, toolIcon, toolIconFA, toolShortcut, isExtra) {
+	addTool: function (toolName, toolIcon, toolIconHTML, toolShortcut, isExtra) {
 		var callback = function () {
 			Tools.change(toolName);
 		};
@@ -208,8 +210,8 @@ Tools.HTML = {
 			elem.addEventListener("click", callback);
 			elem.id = "toolID-" + toolName;
 			
-			if(toolIconFA){
-				elem.getElementsByClassName("tool-icon")[0].innerHTML = toolIconFA;
+			if(toolIconHTML){
+				elem.getElementsByClassName("tool-icon")[0].innerHTML = toolIconHTML;
 			}else{
 				elem.getElementsByClassName("tool-icon")[0].textContent = toolIcon;
 			}
@@ -252,7 +254,7 @@ Tools.add = function (newTool) {
 	}
 
 	//Add the tool to the GUI
-	Tools.HTML.addTool(newTool.name, newTool.icon, newTool.iconFA, newTool.shortcut,newTool.isExtra);
+	Tools.HTML.addTool(newTool.name, newTool.icon, newTool.iconHTML, newTool.shortcut,newTool.isExtra);
 
 	//There may be pending messages for the tool
 	var pending = Tools.pendingMessages[newTool.name];
@@ -656,6 +658,32 @@ Tools.i18n = (function i18n() {
 		}
 	};
 })();
+
+if (typeof Array.isArray === 'undefined') {
+	Array.isArray = function(obj) {
+	  return Object.prototype.toString.call(obj) === '[object Array]';
+	}
+};
+
+if (!String.prototype.startsWith) {
+    String.prototype.startsWith = function(searchString, position) {
+        position = position || 0;
+        return this.indexOf(searchString, position) === position;
+    };
+}
+
+function arrayContains(arr, searchFor){
+    if(typeof arr.includes == 'undefined'){
+        var arrLength = arr.length;
+        for (var i = 0; i < arrLength; i++) {
+            if (arr[i] === searchFor) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return arr.includes(searchFor);
+}
 
 //Scale the canvas on load
 var screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);

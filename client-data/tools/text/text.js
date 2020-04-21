@@ -192,6 +192,8 @@
 		elem.setAttribute("fill", fieldData.color);
 		elem.setAttribute("opacity", Math.max(0.1, Math.min(1, fieldData.opacity)) || 1);
 		if (fieldData.txt) elem.textContent = fieldData.txt;
+		if(fieldData.transform)
+			elem.setAttribute("transform",fieldData.transform);
 		Tools.group.appendChild(elem);
 		return elem;
 	}

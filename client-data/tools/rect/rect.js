@@ -39,7 +39,7 @@
 			'x2': 0,
 			'y2': 0
 		},
-		lastTime = performance.now(); //The time at which the last point was drawn
+	lastTime = performance.now(); //The time at which the last point was drawn
 
 	function start(x, y, evt) {
 
@@ -146,6 +146,8 @@
 		shape.width.baseVal.value = Math.abs(data['x2'] - data['x']);
 		shape.height.baseVal.value = Math.abs(data['y2'] - data['y']);
 		shape.setAttribute("fill", "none");
+		if(data.transform)
+			shape.setAttribute("transform",data.transform);
 	}
 
 	function updateCircle(shape, data) {		
@@ -153,6 +155,8 @@
 		shape.cy.baseVal.value = Math.round((data['y2'] + data['y'])/2);
 		shape.r.baseVal.value = Math.round(Math.sqrt(Math.pow(data['x2'] - data['x'],2)+Math.pow(data['y2'] - data['y'],2))/2);
 		shape.setAttribute("fill", "none");
+		if(data.transform)
+			shape.setAttribute("transform",data.transform);
 	}
 
 	function toggle(elem){

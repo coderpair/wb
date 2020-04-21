@@ -35,7 +35,7 @@
 		</script>
 	<div id="loadingMessage">Loading</div>
 <div id="board">
-		<svg id="canvas" width="500" height="500" viewBox= "0 0 500 500" + svgHeightversion="1.1" xmlns="http://www.w3.org/2000/svg" >
+		<svg id="canvas" onload="init(evt)" width="500" height="500" viewBox= "0 0 500 500" + svgHeightversion="1.1" xmlns="http://www.w3.org/2000/svg" >
 			 <defs id="defs">
       				<pattern id="smallGrid" width="30" height="30" patternUnits="userSpaceOnUse">
         				<path d="M 30 0 L 0 0 0 30" fill="none" stroke="gray" stroke-width="0.5"/>
@@ -45,9 +45,10 @@
         				<path d="M 300 0 L 0 0 0 300" fill="none" stroke="gray" stroke-width="1"/>
       				</pattern>
     			</defs>
-    			<rect style="display:block" id="rect_1" width="100%" height="100%" fill="url(#grid)" />
+    			<rect onmousedown="mouser.unregisterShapes()" style="display:block" id="rect_1" width="100%" height="100%" fill="url(#grid)" />
 			<cursors id="cursors"></cursors>
-			 <g style="mask: url(#mask-layer-1);" id="layer-1"></g>
+			<g style="mask: url(#mask-layer-1);" id="layer-1"></g>
+			
 		</svg>
 	</div>
 	<div id="menu">
@@ -103,10 +104,12 @@
 				</li>
 			</ul>
 		</div>
-	</div>
 	
 
+	</div>
 
+	<script src="js/2D.js"></script>
+	<script src="js/Init2D.js"></script>
 	<script type="application/json" id="translations">{}</script>
 	<script src="js/path-data-polyfill.js"></script>
 	<script src="js/minitpl.js"></script>
@@ -116,9 +119,10 @@
 	<script src="tools/rect/rect.js"></script>
 	<script src="tools/text/text.js"></script>
 	<script src="tools/eraser/eraser.js"></script>
+	<script src="tools/transform/transform.js"></script>
 	<script src="tools/hand/hand.js"></script>
-	<script src="tools/clear/clear.js"></script>
 	<script src="tools/grid/grid.js"></script>
+	<script src="tools/clear/clear.js"></script>
 	<script src="tools/eraser2/eraser2.js"></script>
 	<script src="tools/undo/undo.js"></script>
 	<script src="tools/redo/redo.js"></script>

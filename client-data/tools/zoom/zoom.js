@@ -131,7 +131,7 @@
     Tools.add({ //The new tool
         // "name": "Zoom",
          "icon": "🔎",
-	"iconFA":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-plus'></i>",
+	"iconHTML":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-plus'></i>",
         "name": "Zoom",
         //"icon": "",
         "listeners": {

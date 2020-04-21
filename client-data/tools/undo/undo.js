@@ -53,7 +53,7 @@
 	Tools.add({ //The new tool
 		"name": "Undo",
 		"icon": "🗑",
-		"iconFA":"<i style='color: #39CCCC;margin-top:7px' class='fas fa-undo-alt'></i>",
+		"iconHTML":"<i style='color: #39CCCC;margin-top:7px' class='fas fa-undo-alt'></i>",
 		//"shortcut": "e",
 		"listeners": {
 			"press": undo

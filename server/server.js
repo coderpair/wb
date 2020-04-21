@@ -74,7 +74,6 @@ function handleRequest(request, response) {
 	var parsedUrl = url.parse(request.url, true);
 	var parts = parsedUrl.pathname.split('/');
 	if (parts[0] === '') parts.shift();
-	console.log("Incoming request");
 
 	if (parts[0] === "boards") {
 		// "boards" refers to the root directory

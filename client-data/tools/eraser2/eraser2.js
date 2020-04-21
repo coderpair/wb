@@ -221,7 +221,7 @@
 
 	Tools.add({ //The new tool
 		 "icon": "E",
-		 "iconFA":"<i style='color: #e75480;margin-top:7px' class='fas fa-eraser'></i>",
+		 "iconHTML":"<i style='color: #e75480;margin-top:7px' class='fas fa-eraser'></i>",
         	"name": '"Touch Up" Eraser',
 		"listeners": {
 			"press": startPath,
