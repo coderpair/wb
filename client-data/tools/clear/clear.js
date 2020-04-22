@@ -32,8 +32,8 @@
 	};
 
 	function clearBoard(x, y, evt, isTouchEvent) {
-		if($("#menu").width()!=Tools.menu_width)return;
-        	evt.preventDefault();
+		if($("#menu").width()>Tools.menu_width+3)return;
+        evt.preventDefault();
 		Tools.acceptMsgs = false;
 		Tools.drawAndSend(msg);
 	};

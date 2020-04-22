@@ -55,7 +55,7 @@
 	};
 
 	function clickHandler(x, y, evt, isTouchEvent) {
-		if($("#menu").width()!=Tools.menu_width)return;
+		if($("#menu").width()>Tools.menu_width+3)return;
 		if (evt.target == input) return;
 		if (evt.target.tagName === "text") {
 			editOldText(evt.target);

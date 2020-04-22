@@ -184,7 +184,7 @@ Tools.clearBoard = function(deleteMsgs){
 	Tools.svg.appendChild(cursors);
 	var group = Tools.createSVGElement("g");
 	group.id="layer-"+Tools.layer;
-	group.style.mask = "url(#mask-layer-"+Tools.layer+")"
+	//group.style.mask = "url(#mask-layer-"+Tools.layer+")"
 	Tools.svg.appendChild(group);
 	Tools.group = group;
 };
@@ -692,6 +692,7 @@ svgWidth = Tools.svg.width.baseVal.value = Math.max(screenWidth + 2000, screenWi
 svgHeight = Tools.svg.height.baseVal.value =  Math.max(screenHeight + 2000, screenHeight * 2.5);
 
 Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
+
 
 /***********  Polyfills  ***********/
 if (!window.performance || !window.performance.now) {

@@ -115,12 +115,11 @@
 			rect.setAttribute("height", "100%");
 			rect.setAttribute("fill", "white");
 			newMask.appendChild(rect);
-
+			Tools.group.style.mask = "url(#mask-layer-"+Tools.layer+")"
 			Tools.layer++;
 		
 			var group = Tools.createSVGElement("g");
 			group.id="layer-"+Tools.layer;
-			group.style.mask = "url(#mask-layer-"+Tools.layer+")"
 			svg.appendChild(group);
 			group.appendChild(Tools.group);
 			Tools.group=group;

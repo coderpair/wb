@@ -32,7 +32,7 @@
 	};
 
 	function undo(x, y, evt, isTouchEvent) {
-        	if($("#menu").width()!=Tools.menu_width)return;
+		if($("#menu").width()>Tools.menu_width+3)return;
         	evt.preventDefault();
 		Tools.drawAndSend(msg);
 	};

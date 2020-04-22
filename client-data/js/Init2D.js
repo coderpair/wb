@@ -10,6 +10,7 @@ var azap, mouser;
 var points = new Array();
 var shapes = new Array();
 var info;
+var initCalled = false;
 
 
 /*****
@@ -18,14 +19,14 @@ var info;
 *
 *****/
 function init(e) {
-    if ( window.svgDocument == null )
-        svgDocument = e.target.ownerDocument;
-    azap   = new AntiZoomAndPan();
-    mouser = new Mouser();
+    if(!initCalled){
+        initCalled = true;
+        azap   = new AntiZoomAndPan();
+        mouser = new Mouser();
 
-    var background = svgDocument.getElementById("rect_1");
+        var background = Tools.svg.getElementById("rect_1");
 
-
-    azap.appendNode(mouser.svgNode);
-    azap.appendNode(background);
+        azap.appendNode(mouser.svgNode);
+        azap.appendNode(background);
+    }
 }

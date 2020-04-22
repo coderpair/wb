@@ -12,6 +12,7 @@
 	<link rel="stylesheet" type="text/css" href="board.css" />
 	<script src="https://kit.fontawesome.com/0166a4ad2b.js" crossorigin="anonymous"></script>
 	<script src="socket.io.js"></script>
+
 	<meta name="description"
 		content="A free and opensource online collaborative drawing tool." />
 	<meta name="keywords"
@@ -29,13 +30,13 @@
 
 <body>
 	<script>
-		$(document).ready(function(){
-		  //$('[data-toggle="popover"]').popover(); 
+		$(window).on("load", function() {
+    	    init();
 		});
-		</script>
+	</script>
 	<div id="loadingMessage">Loading</div>
 <div id="board">
-		<svg id="canvas" onload="init(evt)" width="500" height="500" viewBox= "0 0 500 500" + svgHeightversion="1.1" xmlns="http://www.w3.org/2000/svg" >
+		<svg id="canvas"  width="500" height="500" viewBox= "0 0 500 500" + svgHeightversion="1.1" xmlns="http://www.w3.org/2000/svg" >
 			 <defs id="defs">
       				<pattern id="smallGrid" width="30" height="30" patternUnits="userSpaceOnUse">
         				<path d="M 30 0 L 0 0 0 30" fill="none" stroke="gray" stroke-width="0.5"/>
@@ -47,7 +48,7 @@
     			</defs>
     			<rect onmousedown="mouser.unregisterShapes()" style="display:block" id="rect_1" width="100%" height="100%" fill="url(#grid)" />
 			<cursors id="cursors"></cursors>
-			<g style="mask: url(#mask-layer-1);" id="layer-1"></g>
+			<g id="layer-1"></g>
 			
 		</svg>
 	</div>

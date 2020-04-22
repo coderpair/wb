@@ -64,7 +64,7 @@
 			shape.setAttribute("fill", "gray");
 			shape.setAttribute("stroke-width",1);
 			shape.setAttribute("fill-opacity",.1);
-			Tools.createSVGElement("text");
+			
 			Tools.svg.appendChild(shape);
 			if(!textElem){
 				textElem = Tools.createSVGElement("text");

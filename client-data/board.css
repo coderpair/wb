@@ -39,13 +39,10 @@ html, body, svg {
     display: none;
 }
 
-/* Hide scrollbar for IE and Edge */
-#menur {
-    -ms-overflow-style: none;
-}
-
 
 #menu {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
 	font-size: 16px;
 	border-radius:0;
 	overflow-y: scroll;
