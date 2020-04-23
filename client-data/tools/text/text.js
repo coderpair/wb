@@ -75,8 +75,12 @@
 
 	function editOldText(elem) {
 		curText.id = elem.id;
-		curText.x = elem.x.baseVal[0].value;
-		curText.y = elem.y.baseVal[0].value;
+		var r = elem.getBoundingClientRect();
+		var x = (r.x+document.documentElement.scrollLeft)/Tools.scale;
+		var y = (r.y+r.height+document.documentElement.scrollTop)/Tools.scale;
+				
+		curText.x = x;
+		curText.y = y;
 		curText.size = parseInt(elem.getAttribute("font-size"));
 		curText.opacity = parseFloat(elem.getAttribute("opacity"));
 		curText.color = elem.getAttribute("fill");
