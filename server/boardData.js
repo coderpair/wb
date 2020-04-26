@@ -50,6 +50,7 @@ var BoardData = function (name) {
 	this.undoHistory = [];
 	this.userState = {};
 	this.users = new Set();
+	this.counter = 0;
 };
 
 
@@ -66,7 +67,7 @@ BoardData.prototype.set = function (id, data) {
 	this.size += size;
 	this.actionHistory.push({type:'A',elem:this.elements[id]});
 	this.undoHistory = [];
-	this.formatAndSave(this.elements[id],true);
+	this.stampAndSave(this.elements[id],true);
 };
 
 /** Adds a child to an element that is already in the board
@@ -85,7 +86,7 @@ BoardData.prototype.addChild = function (parentId, child) {
 	var data = parent.data
 	if (Array.isArray(data._children)) data._children.push(child);
 	else data._children = [child];
-	this.formatAndSave(parent,(data.type != "erase"));
+	this.stampAndSave(parent,(data.type != "erase"));
 };
 
 
@@ -121,8 +122,9 @@ BoardData.prototype.update = function (id, message) {
 		var oldData = [];
 		var diff = [];
 		var size = this.size;
-		for(var i = 0;i<id.length;i++){
-			var elem = this.elements[id[i]];
+		var ids = this.sortIds(id);
+		for(var i = 0;i<ids.length;i++){
+			var elem = this.elements[ids[i]];
 			diff[i] = 0;
 			oldData[i]={}
 			if (typeof elem == "object"){
@@ -142,9 +144,9 @@ BoardData.prototype.update = function (id, message) {
 		
 		if(save){
 			if(undo)
-				this.updateActionList(id, gid, newData,oldData, diff);
-			for(var i = 0;i<id.length;i++){
-				var elem = this.elements[id[i]];
+				this.updateActionList(ids, gid, newData,oldData, diff);
+			for(var i = 0;i<ids.length;i++){
+				var elem = this.elements[ids[i]];
 				if (typeof elem == "object"){
 					var data = elem.data;
 					for (var j in newData[i]) {
@@ -152,8 +154,9 @@ BoardData.prototype.update = function (id, message) {
 					}
 					elem.size += diff[i];
 					this.size += diff[i];
+					this.stampAndSave(elem,true)
 				}
-				this.formatAndSave(elem,true)
+				
 			}
 		}
 	}else{
@@ -180,7 +183,7 @@ BoardData.prototype.update = function (id, message) {
 		}
 		elem.size += diff;
 		this.size += diff;
-		this.formatAndSave(elem,true);
+		this.stampAndSave(elem,true);
 	}
 
 };
@@ -432,10 +435,12 @@ BoardData.prototype.getAll = function (id) {
 	var results = [];
 	var elems = this.elements;
 	var ids = Object.keys(elems);
-	var sorted = ids.sort(function (x, y) {
-		return (elems[x].time | 0) - (elems[y].time | 0);
-	})
-	for (var i = 0; i < sorted.length; i++) results.push(elems[sorted[i]].data);
+	var sorted = this.sortIds(ids);
+	for (var i = 0; i < sorted.length; i++){
+
+		results.push(elems[sorted[i]].data);
+	
+	}
 	return results;
 };
 
@@ -457,10 +462,12 @@ BoardData.prototype.addUser = function addUser(userId) {
  * @param {object} [data] - board data
  * .@param {boolean} [stamp] - should update the timestamp
  */
-BoardData.prototype.formatAndSave = function(elem,stamp){
+BoardData.prototype.stampAndSave = function(elem,stamp){
 	//this.validate(data);
-	if(stamp)
-	elem.time = Date.now();
+	if(stamp){
+		elem.time = Date.now();
+		elem.counter = this.counter++;
+	}
 	this.delaySave();
 };
 
@@ -500,9 +507,7 @@ BoardData.prototype.clean = function cleanBoard() {
 	var ids = Object.keys(elems);
 	//console.log("Objects in board: " + ids.length);
 	if (ids.length > config.MAX_ITEM_COUNT) {
-		var toDestroy = ids.sort(function (x, y) {
-			return (elems[x].time | 0) - (elems[y].time | 0);
-		}).slice(0, -config.MAX_ITEM_COUNT);
+		var toDestroy = this.sortIds(ids).slice(0, -config.MAX_ITEM_COUNT);
 		for (var i = 0; i < toDestroy.length; i++) delete elems[toDestroy[i]];
 		console.log("Cleaned " + toDestroy.length + " items in " + this.name);
 	}
@@ -597,6 +602,22 @@ BoardData.load = function loadBoard(name) {  //TODO need to update
 			accept(boardData);
 		});
 	});
+};
+
+BoardData.prototype.sortIds = function sortIds(ids){
+	var elems = this.elements;
+	return ids.sort(function (x, y) {
+		var a=0,b=0,c=0,d=0;
+		if(elems[x]){
+			a = elems[x].time | 0;
+			c =  elems[x].counter | 0;
+		}
+		if(elems[y]){
+			b = elems[y].time | 0;
+			d =  elems[y].counter | 0;
+		}
+		return ( a == b && a > 0  ? c - d : a - b)
+	})
 };
 
 function memorySizeOf(obj) {

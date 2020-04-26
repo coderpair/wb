@@ -24,6 +24,7 @@ function onstart() {
             
             var msg = {
                 id: uid,
+                type:"doc",
                 data: image.src,
                 w: this.width || 300,
                 h: this.height || 300,
