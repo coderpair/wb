@@ -25,27 +25,10 @@
  * @module boardData
  */
 
-var fs = require('fs'),
-	path = require("path");
+var fs = require('fs')
+, path = require("path")
+, config = require("./configuration.js");
 
-/** @constant
-    @type {string}
-    @default
-    Path to the file where boards will be saved by default
-*/
-var HISTORY_DIR = path.join(__dirname, "../server-data/");
-
-/** @constant
-    @type {Number}
-    @default
-    Number of seconds of inactivity after which the board should be saved to a file
-*/
-var SAVE = false;
-var SAVE_INTERVAL = 1000 * 2; // Save after 2 seconds of inactivity
-var MAX_SAVE_DELAY = 1000 * 60; // Save after 60 seconds even if there is still activity
-var MAX_ITEM_COUNT = 32768; // Max number of items to keep in the board
-var MAX_CHILDREN = 12800; // Max number of subitems in an item
-var MAX_BOARD_SIZE = 65536; // Maximum value for any x or y on the board
 
 /**
  * Represents a board.
@@ -53,134 +36,181 @@ var MAX_BOARD_SIZE = 65536; // Maximum value for any x or y on the board
  */
 var BoardData = function (name) {
 	this.name = name;
-	this.board = {};
-	this.file = path.join(HISTORY_DIR, "board-" + encodeURIComponent(name) + ".json");
+	this.size = 0;
+	this.elements = {};
+	this.file = path.join(config.HISTORY_DIR, "board-" + encodeURIComponent(name) + ".json");
 	this.lastSaveDate = Date.now();
 	this.actionHistory = [];
-	this.undoHistory = [];
 	this.actionHistory.push = function (){
-		if (this.length >= 25) {
+		if (this.length >= config.MAX_UNDO_HISTORY) {
 			this.shift();
 		}
 		return Array.prototype.push.apply(this,arguments);
 	}
+	this.undoHistory = [];
 	this.userState = {};
 	this.users = new Set();
 };
 
 
-/** Adds data to the board */
+/** Adds an element to the board 
+ * @param {string} id - Element Identifier.
+ * @param {object} data - Element data.
+*/
+
 BoardData.prototype.set = function (id, data) {
 	//KISS
-	this.board[id] = data;
-	this.actionHistory.push({type:'A',data:data});
+	var size;
+	if(!(size = this.isValid(data, "data"))) return;
+	this.elements[id]={size:size,data:data};
+	this.size += size;
+	this.actionHistory.push({type:'A',elem:this.elements[id]});
 	this.undoHistory = [];
-	this.formatAndSave(data,true);
+	this.formatAndSave(this.elements[id],true);
 };
 
 /** Adds a child to an element that is already in the board
  * @param {string} parentId - Identifier of the parent element.
  * @param {object} child - Object containing the the values to update.
- * @returns {boolean} - True if the child was added, else false
 */
 BoardData.prototype.addChild = function (parentId, child) {
-	var data = this.board[parentId];
-	if (typeof data !== "object"){
+	var parent = this.elements[parentId];
+	if (typeof parent !== "object"){
 		return;
 	}
+	var size;
+	if(!(size = this.isValid(child, "child"))) return;
+	parent.size += size;
+	this.size += size;
+	var data = parent.data
 	if (Array.isArray(data._children)) data._children.push(child);
 	else data._children = [child];
-	this.formatAndSave(data,(data.type != "erase"));
+	this.formatAndSave(parent,(data.type != "erase"));
 };
+
 
 /** Update the data in the board
+ *  When doing a bulk update, store an array of object id's to update in the id parameter.
+ *  The function expects the updates for each object to be stored in an array called
+ *  "updates". Attach a field called "gid" to message to identify the group operation.
+ * 
+ * If id is not an array, the function assumes you are updating a single object. In that
+ * case, the fields to update will be attached directly to "message". //TODO maybe rework this
+ * 
+ * Attach a field called "undo" to message if you want your update to be undoable.
+ * 
  * @param {string} id - Identifier of the data to update.
- * @param {object} newData - Object containing the the values to update.
- * @param {boolean} create - True if the object should be created if it's not currently in the DB.
+ * @param {object} message - Object containing the the values to update.
 */
-BoardData.prototype.update = function (id, newData, create) {
-	
-	if(Array.isArray(id)){
+BoardData.prototype.update = function (id, message) {
+
+	var gid = message.gid;
+	var undo = message.undo;
+
+	// get rid of some attributes that we don't want updated.
+	delete message.id;
+	delete message.gid;
+	delete message.undo;
+				
+	delete message.type;
+	delete message.tool;
+			
+	if(Array.isArray(id)){ //Handle bulk update
+		var newData = message.updates  
 		var save = false;
-		var oldTransform = [];
+		var oldData = [];
+		var diff = [];
+		var size = this.size;
 		for(var i = 0;i<id.length;i++){
-			var data = this.board[id[i]];
-			if (typeof data == "object"){
+			var elem = this.elements[id[i]];
+			diff[i] = 0;
+			oldData[i]={}
+			if (typeof elem == "object"){
+				var data = elem.data
+				for (var j in newData[i]) {
+					var sz;
+					if(!(sz = this.isValid(message, "bulk-update", j, newData[i][j]))) return;
+					diff[i] += sz - memorySizeOf( data[j] );
+					if(data[j])
+						oldData[i][j]=data[j];
+				}
 				save=true;
-				oldTransform[i]=data["transform"];
+				if(size+diff[i]>config.MAX_BOARD_BYTES) return;
+				size += diff[i];
 			}
 		}
+		
 		if(save){
-			this.updateActionListTransform(id,newData,oldTransform);
+			if(undo)
+				this.updateActionList(id, gid, newData,oldData, diff);
 			for(var i = 0;i<id.length;i++){
-				var data = this.board[id[i]];
-				if (typeof data == "object"){
-					data["transform"] = newData.transform[i];
+				var elem = this.elements[id[i]];
+				if (typeof elem == "object"){
+					var data = elem.data;
+					for (var j in newData[i]) {
+						data[j]=newData[i][j];
+					}
+					elem.size += diff[i];
+					this.size += diff[i];
 				}
+				this.formatAndSave(elem,true)
 			}
-			this.formatAndSave(data,true)
 		}
 	}else{
-		var data = this.board[id];
-		if (typeof data !== "object"){
+		var newData=message;
+		var elem = this.elements[id];
+		if (typeof elem !== "object"){
 			return;
 		}
-		if(newData["transform"]){
-			this.updateActionListTransform(id,newData,data["transform"]);
-		}
+		var data = elem.data;
+		var diff = 0;
+		var oldData = {};
 		for (var i in newData) {
-			if(i!="tool")
+			var sz;
+			if(!(sz = this.isValid(message, "update", i, newData[i]))) return;
+			diff += sz - memorySizeOf( data[i] )
+			if(data[i])
+				oldData[i]=data[i]
+		}
+		if(this.size+diff>config.MAX_BOARD_BYTES) return;
+		if(undo)
+			this.updateActionList(id, gid, newData, oldData, diff);
+		for (var i in newData) {
 			data[i] = newData[i];
-			
 		}
-		this.formatAndSave(data,true);
+		elem.size += diff;
+		this.size += diff;
+		this.formatAndSave(elem,true);
 	}
 
 };
 
-/** Update group transform
- * @param {string} id - Identifier of the data to delete.
- */
-BoardData.prototype.updateActionListTransform = function (id,newData,oldTransform) {
-	var lastEvent = null
-	for(var i = 0;i<this.actionHistory.length;i++){
-		if(this.actionHistory[i].gid&&this.actionHistory[i].gid==newData.gid){
-			lastEvent=this.actionHistory[i];
-			this.actionHistory.splice(i, 1);
-    		this.actionHistory.push(lastEvent);
-		}
-	}
-	if(lastEvent){
-		lastEvent.transform=newData["transform"]
-	}else{
-		this.actionHistory.push({type:'U',id:id,gid:newData.gid,tranform:newData["transform"],oldTransform:oldTransform});
-		this.undoHistory = [];
-	}	
-};
 
 /** Removes data from the board
  * @param {string} id - Identifier of the data to delete.
  */
-BoardData.prototype.delete = function (id,data) {
+BoardData.prototype.delete = function (id) {
 	//KISS
-	if(Array.isArray(id)){
+	if(Array.isArray(id)){  //Bulk delete
 		var removed = [];
 		for(var i = 0;i<id.length;i++){
-			if(this.board[id[i]]){
-				removed.push(this.board[id[i]]);
-				delete this.board[id[i]];
+			if(this.elements[id[i]]){
+				removed.push(this.elements[id[i]]);
+				this.size -= this.elements[id[i]].size;
+				delete this.elements[id[i]];
 			}
 		}
 		if(removed.length>0){
-			this.actionHistory.push({type:'BR',data:removed});
+			this.actionHistory.push({type:'BR',elems:removed});
 			this.undoHistory = [];
 			this.delaySave();
 		}
 	}else{
-		if(this.board[id]){
-			this.actionHistory.push({type:'R',data:this.board[id]});
+		if(this.elements[id]){
+			this.actionHistory.push({type:'R',elem:this.elements[id]});
 			this.undoHistory = [];
-			delete this.board[id];
+			this.size -= this.elements[id].size;
+			delete this.elements[id];
 			this.delaySave();
 		}
 	}
@@ -191,14 +221,15 @@ BoardData.prototype.delete = function (id,data) {
  */
 BoardData.prototype.clear = function () {
 	//KISS
-	if(Object.keys(this.board).length === 0){
-		return 0;
+	if(Object.keys(this.elements).length === 0){
+		return false;
 	}else{
-		this.actionHistory.push({type:'C',data:this.board});
+		this.actionHistory.push({type:'C',size: this.size, elems:this.elements});
 		this.undoHistory = [];
-		this.board={};
+		this.size=0;
+		this.elements={};
 		this.delaySave();
-		return 1;
+		return true;
 	}
 };
 
@@ -212,37 +243,47 @@ BoardData.prototype.undo = function () {
 		this.undoHistory.push(lastEvent);
 		switch(lastEvent.type){
 			case "C":
-				//for(id in lastEvent.data){
-					this.board=lastEvent.data;
-				//}
+				this.elements=lastEvent.elems;
+				this.size = lastEvent.size;
 				break;
 			case "R":
-				this.board[lastEvent.data.id]=lastEvent.data;
+				this.elements[lastEvent.elem.data.id]=lastEvent.elem;
+				this.size += lastEvent.elem.size;
 				break;
 			case "A":
-				delete this.board[lastEvent.data.id];
+				delete this.elements[lastEvent.elem.data.id];
+				this.size -= lastEvent.elem.size;
 				break;
 			case "BR":
-				for(var i = 0;i<lastEvent.data.length;i++){
-					this.board[lastEvent.data[i].id]=lastEvent.data[i];
+				for(var i = 0;i<lastEvent.elems.length;i++){
+					this.elements[lastEvent.elems[i].data.id]=lastEvent.elems[i];
+					this.size += lastEvent.elems[i].size;
 				}
 				break;
 			case "U":
 				if(Array.isArray(lastEvent.id)){
 					for(var i = 0;i<lastEvent.id.length;i++){
-						var data = this.board[lastEvent.id[i]];
-						if (typeof data == "object"){
-							data.transform=lastEvent.oldTransform[i];
-							if(!data.transform){
-								delete this.board[lastEvent.id[i]]["transform"]
+						var elem = this.elements[lastEvent.id[i]];
+						if (typeof elem == "object"){
+							elem.size -= lastEvent.diff[i];
+							this.size -= lastEvent.diff[i];
+							var data = elem.data;
+							for (var j in lastEvent.newData[i]) {
+								delete this.elements[lastEvent.id[i]].data[j]
+							}
+							for (var j in lastEvent.oldData[i]) {
+								this.elements[lastEvent.id[i]].data[j]=lastEvent.oldData[i][j]
 							}
 						}
 					}
 				}else{
-					if(lastEvent.oldTransform){
-						this.board[lastEvent.id]["transform"]=lastEvent.oldTransform;
-					}else{
-						delete this.board[lastEvent.id]["transform"];
+					this.elements[lastEvent.id].size -= lastEvent.diff;
+					this.size -= lastEvent.diff;
+					for (var i in lastEvent.newData) {
+						delete this.elements[lastEvent.id].data[i]
+					}
+					for (var i in lastEvent.oldData) {
+						this.elements[lastEvent.id].data[i]=lastEvent.oldData[i]
 					}
 				}
 				break;
@@ -250,9 +291,9 @@ BoardData.prototype.undo = function () {
 				break;
 		}
 			this.delaySave();
-			return 1;
+			return true;
 	}
-	return 0;
+	return false;
 };
 
 /** Redo 
@@ -265,64 +306,92 @@ BoardData.prototype.redo = function () {
 		this.actionHistory.push(lastEvent);
 		switch(lastEvent.type){
 			case "C":
-				//for(id in lastEvent.data){
-					this.board = {};
-				//}
+				this.elements = {};
+				this.size = 0;
 				break;
 			case "A":
-				this.board[lastEvent.data.id]=lastEvent.data;
+				this.elements[lastEvent.elem.data.id]=lastEvent.elem;
+				this.size += lastEvent.elem.size;
 				break;
 			case "R":
-				delete this.board[lastEvent.data.id];
+				delete this.elements[lastEvent.elem.data.id];
+				this.size -= lastEvent.elem.size;
 				break;
 			case "BR":
-				for(var i = 0;i<lastEvent.data.length;i++){
-					delete this.board[lastEvent.data[i].id];
+				for(var i = 0;i<lastEvent.elems.length;i++){
+					delete this.elements[lastEvent.elems[i].data.id];
+					this.size -= lastEvent.elems[i].size;
 				}
 				break;
 			case "U":
 				if(Array.isArray(lastEvent.id)){
 					for(var i = 0;i<lastEvent.id.length;i++){
-						var data = this.board[lastEvent.id[i]];
-						if (typeof data == "object"){
-							data.transform=lastEvent.transform[i];
+						var elem = this.elements[lastEvent.id[i]];
+						if (typeof elem == "object"){
+							elem.size += lastEvent.diff[i];
+							this.size += lastEvent.diff[i];
+							var data = elem.data;
+							for (var j in lastEvent.newData[i]) {
+								this.elements[lastEvent.id[i]].data[j]=lastEvent.newData[i][j]
+							}
 						}
 					}
 				}else{
-					
-					this.board[lastEvent.id]["transform"]=lastEvent.transform;
-					
+					this.elements[lastEvent.id].size += lastEvent.diff;
+					this.size += lastEvent.diff;
+					for (var i in lastEvent.newData) {
+						this.elements[lastEvent.id].data[i]=lastEvent.newData[i]
+					}
 				}
 				break;
 			default:
 				break;
 		}
 		this.delaySave();
-		return 1;
+		return true;
 	}
-	return 0;
+	return false;
 };
 
-BoardData.prototype.formatAndSave = function(data,stamp){
-	this.validate(data);
-	if(stamp)
-	data.time = Date.now();
-	this.delaySave();
-};
+/** Update action list
+ * @param {string} id - Identifier of the element(s).
+ * @param {string} gid- Group operation identifier
+ * @param {object} newData - Object containing the the values to update.
+ * @param {object} newData - Object containing the elements previous values.
+ * @param {number} diff differne in size between new and old
+ */
+BoardData.prototype.updateActionList = function (id, gid, newData, oldData, diff) {
 
-BoardData.prototype.updateActionHistory= function(id){
-	var found = 0;
-	for(var i =this.actionHistory.length-1; i >=0; i--){ 
-		if ( this.actionHistory[i].type == 'A' && this.actionHistory[i].data.id == id) { 
-			found=1;
-			if(i!=this.actionHistory.length-1)
-				this.actionHistory.push(this.actionHistory.splice(i, 1));
-			break;
+		var lastEvent = null
+		for(var i = 0;i<this.actionHistory.length;i++){
+			if(this.actionHistory[i].gid&&this.actionHistory[i].gid==gid){
+				lastEvent=this.actionHistory[i];
+				this.actionHistory.splice(i, 1);
+				this.actionHistory.push(lastEvent);
+			}
 		}
-	}
-	if(!found)
-		this.actionHistory.push({type:'A',data:data});
+		if(lastEvent){
+			//Merge the changes
+			if(Array.isArray(id)){
+				for(var i = 0; i<id.length;i++){
+					Object.assign(lastEvent.newData[i],newData[i]);
+					Object.assign(oldData[i],lastEvent.oldData[i]);
+					lastEvent.oldData[i] = oldData[i];
+					lastEvent.diff[i]+=diff[i];
+				}
+			}else{
+				Object.assign(lastEvent.newData,newData);
+				Object.assign(oldData,lastEvent.oldData);
+				lastEvent.oldData = oldData;
+				lastEvent.diff+=diff;
+			}
+		}else{
+			this.actionHistory.push({type:'U',id:id,gid:gid,newData:newData,oldData:oldData,diff:diff});
+			this.undoHistory = [];
+		}	
+
 };
+
 
 /**updateMsgCount
  * @param {string} id - Identifier of the socket id.
@@ -352,7 +421,7 @@ BoardData.prototype.getMsgCount = function (id) {
  * @returns {object} The element with the given id, or undefined if no element has this id
  */
 BoardData.prototype.get = function (id, children) {
-	return this.board[id];
+	return this.elements[id].data;
 };
 
 /** Reads data from the board
@@ -361,17 +430,17 @@ BoardData.prototype.get = function (id, children) {
  */
 BoardData.prototype.getAll = function (id) {
 	var results = [];
-	var board = this.board;
-	var ids = Object.keys(board);
+	var elems = this.elements;
+	var ids = Object.keys(elems);
 	var sorted = ids.sort(function (x, y) {
-		return (board[x].time | 0) - (board[y].time | 0);
+		return (elems[x].time | 0) - (elems[y].time | 0);
 	})
-	for (var i = 0; i < sorted.length; i++) results.push(board[sorted[i]]);
+	for (var i = 0; i < sorted.length; i++) results.push(elems[sorted[i]].data);
 	return results;
 };
 
-/**
- * 
+/** Adds a user
+ * @param {string} [userId] - Identifier of the user.
  */
 BoardData.prototype.addUser = function addUser(userId) {
 
@@ -384,13 +453,25 @@ BoardData.prototype.addUser = function addUser(userId) {
  * @param {object} data
  */
 
+ /** Prepares for the saving of board data
+ * @param {object} [data] - board data
+ * .@param {boolean} [stamp] - should update the timestamp
+ */
+BoardData.prototype.formatAndSave = function(elem,stamp){
+	//this.validate(data);
+	if(stamp)
+	elem.time = Date.now();
+	this.delaySave();
+};
+
 
 /** Delays the triggering of auto-save by SAVE_INTERVAL seconds
 */
 BoardData.prototype.delaySave = function (file) {
 	if (this.saveTimeoutId !== undefined) clearTimeout(this.saveTimeoutId);
-	this.saveTimeoutId = setTimeout(this.save.bind(this), SAVE_INTERVAL);
-	if (Date.now() - this.lastSaveDate > MAX_SAVE_DELAY) setTimeout(this.save.bind(this), 0);
+	this.saveTimeoutId = setTimeout(this.save.bind(this), config.SAVE_INTERVAL);
+	 if (Date.now() - this.lastSaveDate > config.MAX_SAVE_DELAY) setTimeout(this.save.bind(this), 0);		 	
+	 if (Date.now() - this.lastSaveDate > config.MAX_SAVE_DELAY) setTimeout(this.save.bind(this), 0);
 };
 
 /** Saves the data in the board to a file.
@@ -399,9 +480,9 @@ BoardData.prototype.delaySave = function (file) {
 BoardData.prototype.save = function (file) {
 	this.lastSaveDate = Date.now();
 	this.clean();
-	if(SAVE){
+	if(config.SAVE_BOARDS){  //TODO Need to updat this
 		if (!file) file = this.file;
-		var board_txt = JSON.stringify(this.board);
+		var board_txt = JSON.stringify(this.elements);
 		var that = this;
 		fs.writeFile(file, board_txt, function onBoardSaved(err) {
 			if (err) {
@@ -415,32 +496,70 @@ BoardData.prototype.save = function (file) {
 
 /** Remove old elements from the board */
 BoardData.prototype.clean = function cleanBoard() {
-	var board = this.board;
-	var ids = Object.keys(board);
-	if (ids.length > MAX_ITEM_COUNT) {
+	var elems = this.elements;
+	var ids = Object.keys(elems);
+	//console.log("Objects in board: " + ids.length);
+	if (ids.length > config.MAX_ITEM_COUNT) {
 		var toDestroy = ids.sort(function (x, y) {
-			return (board[x].time | 0) - (board[y].time | 0);
-		}).slice(0, -MAX_ITEM_COUNT);
-		for (var i = 0; i < toDestroy.length; i++) delete board[toDestroy[i]];
+			return (elems[x].time | 0) - (elems[y].time | 0);
+		}).slice(0, -config.MAX_ITEM_COUNT);
+		for (var i = 0; i < toDestroy.length; i++) delete elems[toDestroy[i]];
 		console.log("Cleaned " + toDestroy.length + " items in " + this.name);
 	}
 }
 
+
+
+
+/** isValid
+ * @param {object} data Message data
+ *  @param {string} type Message type
+ * @param {string} key Key for field validation
+ *  @param {object} value Obj for field validation
+*/
+BoardData.prototype.isValid = function isValid(data,type,key, value) {
+	//console.log("Board Stats: Current size " + this.size);
+	if(config.ENFORCE_BOARD_TEMPLATE){
+		//TODO validate data based on Template
+	}
+	//For now...
+	if(type=="data"||type=="child"){
+		if(type=="child"){
+			var item = this.elements[data.parent];
+			if (item.hasOwnProperty("_children")) {
+				if (!Array.isArray(item._children)) item._children = [];
+				if (item._children.length > config.MAX_CHILDREN) item._children.length = config.MAX_CHILDREN;
+			}
+		}
+		var size =  memorySizeOf(data);
+		if(this.size + size > config.MAX_BOARD_BYTES){
+			return 0;
+		}else{
+			return size;
+		}
+	}else{
+		return memorySizeOf(value);
+	}
+}
+
+
+// Seems unnecessary since most of these parameters are constrained at the client
 /** Reformats an item if necessary in order to make it follow the boards' policy 
  * @param {object} item The object to edit
  * @param {object} parent The parent of the object to edit
 */
+/*
 BoardData.prototype.validate = function validate(item, parent) {
 	if (item.hasOwnProperty("size")) {
 		item.size = parseInt(item.size) || 1;
-		item.size = Math.min(Math.max(item.size, 1), 50);
+		item.size = Math.min(Math.max(item.size, 1), config.MAX_ITEM_SIZE);
 	}
 	if (item.hasOwnProperty("x") || item.hasOwnProperty("y")) {
 		item.x = parseFloat(item.x) || 0;
-		item.x = Math.min(Math.max(item.x, 0), MAX_BOARD_SIZE);
+		item.x = Math.min(Math.max(item.x, 0), config.MAX_BOARD_SIZE);
 		item.x = Math.round(10 * item.x) / 10;
 		item.y = parseFloat(item.y) || 0;
-		item.y = Math.min(Math.max(item.y, 0), MAX_BOARD_SIZE);
+		item.y = Math.min(Math.max(item.y, 0), config.MAX_BOARD_SIZE);
 		item.y = Math.round(10 * item.y) / 10;
 	}
 	if (item.hasOwnProperty("opacity")) {
@@ -449,34 +568,74 @@ BoardData.prototype.validate = function validate(item, parent) {
 	}
 	if (item.hasOwnProperty("_children")) {
 		if (!Array.isArray(item._children)) item._children = [];
-		if (item._children.length > MAX_CHILDREN) item._children.length = MAX_CHILDREN;
+		if (item._children.length > config.MAX_CHILDREN) item._children.length = config.MAX_CHILDREN;
 		for (var i = 0; i < item._children.length; i++) {
 			this.validate(item._children[i]);
 		}
 	}
 }
+*/
 
 /** Load the data in the board from a file.
  * @param {string} file - Path to the file where the board data will be read.
 */
-BoardData.load = function loadBoard(name) {
+BoardData.load = function loadBoard(name) {  //TODO need to update
 	var boardData = new BoardData(name);
 	return new Promise((accept) => {
 		fs.readFile(boardData.file, function (err, data) {
 			try {
 				if (err) throw err;
-				boardData.board = JSON.parse(data);
-				for (id in boardData.board) boardData.validate(boardData.board[id]);
+				boardData.elements = JSON.parse(data);
+				//for (id in boardData.elements) boardData.validate(boardData.board[id]);
 				console.log(boardData.name + " loaded from file.");
 			} catch (e) {
-				if(SAVE)
+				if(config.SAVE_BOARDS)
 				console.error("Unable to read history from " + boardData.file + ". The following error occured: " + e);
 				console.log("Creating an empty board.");
-				boardData.board = {}
+				boardData.elements = {}
 			}
 			accept(boardData);
 		});
 	});
+};
+
+function memorySizeOf(obj) {
+    var bytes = 0;
+
+    function sizeOf(obj) {
+        if(obj !== null && obj !== undefined) {
+            switch(typeof obj) {
+            case 'number':
+                bytes += 8;
+                break;
+            case 'string':
+                bytes += obj.length * 2;
+                break;
+            case 'boolean':
+                bytes += 4;
+                break;
+            case 'object':
+                var objClass = Object.prototype.toString.call(obj).slice(8, -1);
+                if(objClass === 'Object' || objClass === 'Array') {
+                    for(var key in obj) {
+                        if(!obj.hasOwnProperty(key)) continue;
+                        sizeOf(obj[key]);
+                    }
+                } else bytes += obj.toString().length * 2;
+                break;
+            }
+        }
+        return bytes;
+    };
+
+    function formatByteSize(bytes) {
+        return bytes;
+        //else if(bytes < 1048576) return(bytes / 1024).toFixed(3) + " KiB";
+        //else if(bytes < 1073741824) return(bytes / 1048576).toFixed(3) + " MiB";
+        //else return(bytes / 1073741824).toFixed(3) + " GiB";
+    };
+
+    return formatByteSize(sizeOf(obj));
 };
 
 module.exports.BoardData = BoardData;

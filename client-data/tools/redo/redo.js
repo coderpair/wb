@@ -31,10 +31,10 @@
 		"type": "redo"
 	};
 
-	function redo(x, y, evt, isTouchEvent) {
-		if($("#menu").width()>Tools.menu_width+3)return;
+	function redo(evt) {
         evt.preventDefault();
-		Tools.drawAndSend(msg);
+		draw(msg);
+		Tools.send(msg,"Undo");
 	};
 
 	function draw(data) {
@@ -60,6 +60,8 @@
 		},
 		"draw": draw,
 		"isExtra":true,
+		"oneTouch":true,
+		"onstart":redo,
 		"mouseCursor": "crosshair",
 	});
 

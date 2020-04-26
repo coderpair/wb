@@ -1,63 +1,63 @@
-var fs = require("fs");
-var path = require("path"); 
-
-var https = {
-	key : fs.readFileSync(path.join(__dirname, "../../../../ssl/private.key")),
-	cert : fs.readFileSync(path.join(__dirname, "../../../../ssl/certificate.crt")),
-	ca : fs.readFileSync(path.join(__dirname, "../../../../ssl/ca_bundle.crt"))
-};
-
-var app = require('https').createServer(https,handler)
-	, sockets = require('./sockets.js')
+var  sockets = require('./sockets.js')
+	, log = require("./log.js").log
 	, path = require('path')
 	, url = require('url')
-	, nodestatic = require("node-static")
-	, createSVG = require("./createSVG.js");
+	, fs = require("fs")
+	, crypto = require("crypto")
+	, serveStatic = require("serve-static")
+	, createSVG = require("./createSVG.js")
+	, templating = require("./templating.js")
+	, config = require("./configuration.js");
 
+var https = {
+		key : fs.readFileSync(path.join(__dirname, config.PRIVATE_KEY_PATH)),
+		cert : fs.readFileSync(path.join(__dirname, config.CERTIFICATE_PATH)),
+		ca : fs.readFileSync(path.join(__dirname, config.CA_BUNDLE_PATH))
+	};
+
+var app =(config.HTTPS ? require('https').createServer(https,handler) : require('http').createServer(handler));
+
+var MIN_NODE_VERSION = 10.0;
+
+if (parseFloat(process.versions.node) < MIN_NODE_VERSION) {
+	console.warn(
+		"!!! You are using node " + process.version +
+		", wbo requires at least " + MIN_NODE_VERSION + " !!!");
+}
 
 var io = sockets.start(app);
 
-/**
- * Folder from which static files will be served
- * @const
- * @type {string}
- */
-var WEBROOT = path.join(__dirname, "../client-data");
-
-/**
- * Port on which the application will listen
- * @const
- * @type {number}
- */
-var PORT = parseInt(process.env['PORT']) || 8080;
-
-app.listen(PORT);
-console.log("Server listening on " + PORT);
+app.listen(config.PORT);
+log("server started", { port: config.PORT });
 
 var CSP = "default-src 'self'; style-src 'self' 'unsafe-inline'; connect-src 'self' ws: wss:";
 
-var fileserver = new nodestatic.Server(WEBROOT, {
-	"headers": {
-		"X-UA-Compatible": "IE=Edge",
-		"Content-Security-Policy": CSP,
+var fileserver = serveStatic(config.WEBROOT, {
+	maxAge: 2 * 3600 * 1000,
+	setHeaders: function (res) {
+		res.setHeader("X-UA-Compatible", "IE=Edge");
+		res.setHeader("Content-Security-Policy", CSP);
 	}
 });
 
-function serveError(request, response, err) {
-	console.warn("Error serving '" + request.url + "' : " + err.status + " " + err.message);
-	fileserver.serveFile('error.html', err.status, {}, request, response);
+var errorPage = fs.readFileSync(path.join(config.WEBROOT, "error.html"));
+function serveError(request, response) {
+	return function (err) {
+		log("error", { "error": err, "url": request.url });
+		response.writeHead(err ? 500 : 404, { "Content-Length": errorPage.length });
+		response.end(errorPage);
+	}
 }
 
 function logRequest(request) {
-	console.log(JSON.stringify({
-		event: 'connection',
+	log('connection', {
 		ip: request.connection.remoteAddress,
 		original_ip: request.headers['x-forwarded-for'] || request.headers['forwarded'],
 		user_agent: request.headers['user-agent'],
 		referer: request.headers['referer'],
+		language: request.headers['accept-language'],
 		url: request.url,
-		time: Date.now()
-	}));
+	});
 }
 
 function handler(request, response) {
@@ -69,6 +69,9 @@ function handler(request, response) {
 		response.end(err.toString());
 	}
 }
+
+const boardTemplate = new templating.BoardTemplate(path.join(config.WEBROOT, 'board.html'));
+const indexTemplate = new templating.Template(path.join(config.WEBROOT, 'index.html'));
 
 function handleRequest(request, response) {
 	var parsedUrl = url.parse(request.url, true);
@@ -84,50 +87,52 @@ function handleRequest(request, response) {
 			response.end();
 		} else if (parts.length === 2 && request.url.indexOf('.') === -1) {
 			// If there is no dot and no directory, parts[1] is the board name
-			fileserver.serveFile("board.html", 200, {}, request, response);
-			logRequest(request);
+			boardTemplate.serve(request, response);
 		} else { // Else, it's a resource
 			request.url = "/" + parts.slice(1).join('/');
-			fileserver.serve(request, response, function (err, res) {
-				if (err) serveError(request, response, err);
-			});
+			fileserver(request, response, serveError(request, response));
 		}
 	} else if (parts[0] === "download") {
 		var boardName = encodeURIComponent(parts[1]),
-			history_file = "../server-data/board-" + boardName + ".json",
-			headers = {
+			history_file = path.join(config.HISTORY_DIR, "board-" + boardName + ".json");
+		if (parts.length > 2 && /^[0-9A-Za-z.\-]+$/.test(parts[2])) {
+			history_file += '.' + parts[2] + '.bak';
+		}
+		log("download", { "file": history_file });
+		fs.readFile(history_file, function (err, data) {
+			if (err) return serveError(request, response)(err);
+			response.writeHead(200, {
 				"Content-Type": "application/json",
-				"Content-Disposition": 'attachment; filename="' + boardName + '.wbo"'
-			};
-		var promise = fileserver.serveFile(history_file, 200, headers, request, response);
-		promise.on("error", function (err) {
-			console.error("Error while downloading history", err);
-			response.statusCode = 404;
-			response.end("ERROR: Unable to serve history file\n");
+				"Content-Disposition": 'attachment; filename="' + boardName + '.wbo"',
+				"Content-Length": data.length,
+			});
+			response.end(data);
 		});
 	} else if (parts[0] === "preview") {
 		var boardName = encodeURIComponent(parts[1]),
-			history_file = path.join(__dirname, "..", "server-data", "board-" + boardName + ".json");
+			history_file = path.join(config.HISTORY_DIR, "board-" + boardName + ".json");
 		createSVG.renderBoard(history_file, function (err, svg) {
 			if (err) {
+				log(err);
 				response.writeHead(404, { 'Content-Type': 'application/json' });
-				response.end(JSON.stringify(err));
+				return response.end(JSON.stringify(err));
 			}
 			response.writeHead(200, {
 				"Content-Type": "image/svg+xml",
 				"Content-Security-Policy": CSP,
+				'Content-Length': Buffer.byteLength(svg),
 			});
 			response.end(svg);
 		});
+	} else if (parts[0] === "random") {
+		var name = crypto.randomBytes(32).toString('base64').replace(/[^\w]/g, '-');
+		response.writeHead(307, { 'Location': '/boards/' + name });
+		response.end(name);
+
+	} else if (parts[0] === "") { // Index page
+		logRequest(request);
+		indexTemplate.serve(request, response);
 	} else {
-		if (parts[0] === '') logRequest(request);
-		fileserver.serve(request, response, function (err, res) {
-			if (err) {
-				logRequest(request);
-				serveError(request, response, err);
-			}
-		});
+		fileserver(request, response, serveError(request, response));
 	}
 }
-
-

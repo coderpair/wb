@@ -1,8 +1,7 @@
 var iolib = require('socket.io')
-	, BoardData = require("./boardData.js").BoardData;
+	, BoardData = require("./boardData.js").BoardData
+	, config = require("./configuration.js");
 
-var MAX_EMIT_COUNT = 2000; // Maximum number of draw operations before getting banned
-var MAX_EMIT_COUNT_PERIOD = 1000; // Duration (in ms) after which the emit count is reset
 
 // Map from name to *promises* of BoardData
 var boards = {};
@@ -36,7 +35,6 @@ function getBoard(name) {
 }
 
 
-
 function getConnectedSockets() {
 	return Object.values(io.of("/").connected);
 }
@@ -66,13 +64,13 @@ function socketConnection(socket) {
 
 	socket.on("joinboard", noFail(joinBoard));
 
-	var lastEmitSecond = Date.now() / MAX_EMIT_COUNT_PERIOD | 0;
+	var lastEmitSecond = Date.now() / config.MAX_EMIT_COUNT_PERIOD | 0;
 	var emitCount = 0;
 	socket.on('broadcast', noFail(function onBroadcast(message) {
-		var currentSecond = Date.now() / MAX_EMIT_COUNT_PERIOD | 0;
+		var currentSecond = Date.now() / config.MAX_EMIT_COUNT_PERIOD | 0;
 		if (currentSecond === lastEmitSecond) {
 			emitCount++;
-			if (emitCount > MAX_EMIT_COUNT) {
+			if (emitCount > config.MAX_EMIT_COUNT) {
 				var request = socket.client.request;
 				console.log(JSON.stringify({
 					event: 'banned',
@@ -99,36 +97,7 @@ function socketConnection(socket) {
 				console.warn("Received invalid message: %s.", JSON.stringify(message));
 				return;
 			}
-			if(data.type != "cursor"){
-				board.updateMsgCount(socket.id);
-			}
-			data.socket=socket.id;
-			
-			if(data.type == "clear" || data.type == "undo" || data.type == "redo"){
-				var success = 1;
-				if(data.type == "clear"){
-					success = board.clear();
-				}else if(data.type == "undo"){
-					success = board.undo();
-				}else{
-					success = board.redo();
-				}
-				if(success==1){
-					var sockets = getConnectedSockets();
-					sockets.forEach(function(s,i) {
-						s.emit('broadcast', {type:'sync', id: socket.id, _children: board.getAll(),msgCount:board.getMsgCount(s.id)});
-					});
-				}else if(data.type == "clear"){
-					socket.emit("broadcast", {type: 'sync', id: socket.id,msgCount:board.getMsgCount(socket.id)});
-				}
-				
-			}else{
-				//Send data to all other users connected on the same board
-				socket.broadcast.to(boardName).emit('broadcast', data);
-
-				// Save the message in the board
-				handleMsg(boardName, data);
-			}
+			handleMsg(board,data,socket)
 		})
 	}));
 
@@ -149,33 +118,68 @@ function socketConnection(socket) {
 	});
 }
 
-function handleMsg(boardName, message) {
-	var id = message.id;
-	getBoard(boardName).then(board => {
+function handleMsg(board, message, socket) {
+
+
+	if(message.type != "c"){
+		
+		board.updateMsgCount(socket.id);
+	}else{
+		message.socket=socket.id;
+	}
+
+	if(message.type == "clear" || message.type == "undo" || message.type == "redo"){ 
+		
+		/*Actions requiring sync. There is no way to enforce order of events with a broadcast
+		* system. Thus, it is possible that clients sometimes may see an inconsistent picture. 
+		* The server itself, though, should maintain a consistent environment. When a client
+		* calls "clear", "undo", or "redo", the server broadcasts its current state to all clients,
+		* essentially causing a page refresh. This is done in an effort to maintain a degree of 
+		* consistency between the clients that would be difficult to acheive by other means; 
+		* however, it may, at least in the case of "undo" and "redo", be an expensive operation, 
+		* especially for large boards with many users.
+		*/
+
+		var success = true;
+		if(message.type == "clear"){
+			success = board.clear();
+		}else if(message.type == "undo"){
+			success = board.undo();
+		}else{
+			success = board.redo();
+		}
+		if(success){
+			var sockets = getConnectedSockets();
+			sockets.forEach(function(s,i) {
+				s.emit('broadcast', {type:'sync', id: socket.id, _children: board.getAll(),msgCount:board.getMsgCount(s.id)});
+			});
+		}else if(message.type == "clear"){
+			socket.emit("broadcast", {type: 'sync', id: socket.id,msgCount:board.getMsgCount(socket.id)});
+		}
+		
+	}else{
+
+		//Send message to all other users connected on the same board
+		socket.broadcast.to(board.name).emit('broadcast', message);
+
 		switch (message.type) {
-			case "cursor":
-				break;
-			case "undo":
-				board.undo(message);
-				break;
-			case "clear":
-				board.clear();
+			case "c":
 				break;
 			case "delete":
-				if (id) board.delete(id,message);
+				if (message.id) board.delete(message.id, socket.id);
 				break;
 			case "update":
-				delete message.type;
-				if (id) board.update(id, message);
+				if (message.id) board.update(message.id, message, socket.id);
 				break;
 			case "child":
-				board.addChild(message.parent, message);
+				board.addChild(message.parent, message, socket.id);
 				break;
-			default: //Add data
-				if (!id) throw new Error("Invalid message: ", message);
-				board.set(id, message);
+			default: //Add message
+				if (!message.id) throw new Error("Invalid message: ", message);
+				board.set(message.id, message, socket.id);
+
 		}
-	});
+	}
 }
 
 function generateUID(prefix, suffix) {
@@ -185,6 +189,7 @@ function generateUID(prefix, suffix) {
 	if (suffix) uid = uid + suffix;
 	return uid;
 }
+
 
 if (exports) {
 	exports.start = startIO;

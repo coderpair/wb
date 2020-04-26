@@ -193,16 +193,20 @@
 				}
 			}else{
 				if(erasing){
-					for(var i = -1;i<2;i++){
-						for(var j = -1;j<2;j++){
-							scanForObject(x,y,target,i,j);
-						}
-					}
+					if(scanForObject(x,y,target,0,0))return
+					if(scanForObject(x,y,target,0,1))return
+					if(scanForObject(x,y,target,0,-1))return
+					if(scanForObject(x,y,target,1,1))return
+					if(scanForObject(x,y,target,1,0))return
+					if(scanForObject(x,y,target,1,-1))return
+					if(scanForObject(x,y,target,-1,1))return
+					if(scanForObject(x,y,target,-1,0))return
+					if(scanForObject(x,y,target,-1,-1))return
 					for(var i = 2; i<7;i++){
-						scanForObject(x,y,target,0,i);
-						scanForObject(x,y,target,i,0);
-						scanForObject(x,y,target,0,-i);
-						scanForObject(x,y,target,-i,0);
+						if(scanForObject(x,y,target,0,i))return;
+						if(scanForObject(x,y,target,i,0))return;
+						if(scanForObject(x,y,target,0,-i))return;
+						if(scanForObject(x,y,target,-i,0))return;
 					}
 				}
 			}
@@ -250,10 +254,12 @@
 					if(c && c.startsWith("layer-")){
 						layer = parseInt(c.substr(6));
 						if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
+						return true
 					}
 				}
 			}
 		}
+		return false;
 	}
 
 	function segIsWithinRofPt(x, y, x1, y1, x2, y2, r) {

@@ -281,7 +281,7 @@ Handle.CONSTRAIN_Y=2;
 function Handle(x,y,owner){if(arguments.length>0){this.init(x,y,owner);}}
 Handle.prototype.init=function(x,y,owner){Handle.superclass.init.call(this,null);this.point=new Point2D(x,y);this.owner=owner;this.constrain=Handle.NO_CONSTRAINTS;}
 Handle.prototype.realize=function(){if(this.svgNode==null){var svgns="http://www.w3.org/2000/svg";var handle=document.createElementNS(svgns,"rect");var parent;if(this.owner!=null&&this.owner.svgNode!=null){parent=this.owner.svgNode.parentNode;}else{parent=svg;}handle.setAttributeNS(null,"x",this.point.x-(D2isTouch?10:5));handle.setAttributeNS(null,"y",this.point.y-(D2isTouch?10:5));handle.setAttributeNS(null,"width",(D2isTouch?20:10));handle.setAttributeNS(null,"height",(D2isTouch?20:10));handle.setAttributeNS(null,"stroke","black");handle.setAttributeNS(null,"fill","white");mouser.addEvent("press",handle,this);parent.appendChild(handle);this.svgNode=handle;this.show(this.visible);}};
-Handle.prototype.unrealize=function(){mouser.removeEvent("press",this.svgNode,this);this.svgNode.parentNode.removeChild(this.svgNode);};
+Handle.prototype.unrealize=function(){mouser.removeEvent("press",this.svgNode,this);if(this.svgNode.parentNode)this.svgNode.parentNode.removeChild(this.svgNode);};
 Handle.prototype.translate=function(delta){if(this.constrain==Handle.CONSTRAIN_X){this.point.x+=delta.x;}else if(this.constrain==Handle.CONSTRAIN_Y){this.point.y+=delta.y;}else{this.point.addEquals(delta);}this.refresh();};
 Handle.prototype.refresh=function(){this.svgNode.setAttributeNS(null,"x",this.point.x-(D2isTouch?10:5));this.svgNode.setAttributeNS(null,"y",this.point.y-(D2isTouch?10:5));};
 Handle.prototype.select=function(state){Handle.superclass.select.call(this,state);if(state){this.svgNode.setAttributeNS(null,"fill","black");}else{this.svgNode.setAttributeNS(null,"fill","white");}};
@@ -633,7 +633,8 @@ Transform.prototype.unrealize=function(){
         this.handles[i].unrealize();
     }
         mouser.removeEvent("press",this.svgNode,this);
-        this.svgNode.parentNode.removeChild(this.svgNode);
+        if(this.svgNode.parentNode)
+            this.svgNode.parentNode.removeChild(this.svgNode);
     };
 
 

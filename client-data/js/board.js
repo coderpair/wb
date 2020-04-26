@@ -47,6 +47,9 @@ Tools.msgs = [];
 Tools.menu_width=40;
 Tools.scaleDefaults=[.4,.75,1,1.5,2,4,8];
 Tools.scaleIndex = 2;
+Tools.color = "red";
+Tools.showOtherCursors = true;
+Tools.showMyCursor = true;
 
 
 Tools.socket = null,
@@ -108,19 +111,23 @@ Tools.boardName = (function () {
 
 
 //Turn on the cursor tracking
+
 Tools.svg.addEventListener("mousemove", handleMarker, false);
 Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
 
 function handleMarker(evt){
-	var message = {
-		"board": Tools.boardName,
-		"data": {
-			type:"cursor",
-			x : evt.pageX / Tools.getScale(),
-			y : evt.pageY / Tools.getScale()
+	if(Tools.showMyCursor){
+		var message = {
+			"board": Tools.boardName,
+			"data": {
+				type:"c",
+				x : evt.pageX / Tools.getScale(),
+				y : evt.pageY / Tools.getScale(),
+				c : Tools.getColor()
+			}
 		}
+		Tools.socket.emit('broadcast', message);
 	}
-	Tools.socket.emit('broadcast', message);
 	if(Tools.showMarker){
 		moveMarker(message.data);
 	}
@@ -128,13 +135,11 @@ function handleMarker(evt){
 };
 
 
-
 function moveMarker(message) {
 	var cursor = Tools.svg.getElementById("mycursor");
 	if(!cursor){ 
 		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='mycursor' cx='100' cy='100' r='10' fill='#e75480' />";
 		cursor = Tools.svg.getElementById("mycursor");
-		
 	}
 	Tools.svg.appendChild(cursor);
 	//cursor.setAttributeNS(null, "r", Tools.getSize());
@@ -143,7 +148,7 @@ function moveMarker(message) {
         cursor.setAttributeNS(null, "cy", message.y-25);
 };
 
-
+var cursorLastUse={};
 
 function moveCursor(message) {
 	var cursor = Tools.svg.getElementById("cursor"+message.socket);
@@ -151,14 +156,23 @@ function moveCursor(message) {
 		var cursors = Tools.svg.getElementsByClassName("opcursor");
 		for(var i = 0; i < cursors.length; i++)
 		{
-   			cursors[i].remove()
+			if(Date.now()-cursorLastUse[message.socket]>180000){
+				cursors[i].remove();
+			}else{
+				cursors[i].setAttributeNS(null, "visibility", "hidden");
+			}
 		}
 		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='cursor"+message.socket+"' cx='100' cy='100' r='10' fill='orange' />";
 		cursor = Tools.svg.getElementById("cursor"+message.socket);
 		Tools.svg.appendChild(cursor);
+		
 	}
+	cursor.setAttributeNS(null, "fill", message.c);
+	cursor.setAttributeNS(null, "visibility", "visible");
 	cursor.setAttributeNS(null, "cx", message.x);
-     cursor.setAttributeNS(null, "cy", message.y);
+	cursor.setAttributeNS(null, "cy", message.y);
+
+	cursorLastUse[message.socket]=Date.now()
 };
 
 Tools.clearBoard = function(deleteMsgs){
@@ -192,16 +206,24 @@ Tools.clearBoard = function(deleteMsgs){
 Tools.HTML = {
 	template: new Minitpl("#tools > .tool"),
 	templateExtra: new Minitpl("#tool-list > .tool-extra"),
-	addTool: function (toolName, toolIcon, toolIconHTML, toolShortcut, isExtra) {
-		var callback = function () {
-			Tools.change(toolName);
-		};
-		window.addEventListener("keydown", function (e) {
-			if (e.key === toolShortcut && !e.target.matches("input[type=text], textarea")) {
+	addTool: function (toolName, toolIcon, toolIconHTML, toolShortcut, isExtra, oneTouch) {
+		var callback;
+		
+		if(oneTouch){
+			callback = function (evt) {
+				Tools.onClick(toolName,evt);
+			};
+		}else{
+			callback = function () {
 				Tools.change(toolName);
-				document.activeElement.blur();
-			}
-		});
+			};
+			window.addEventListener("keydown", function (e) {
+				if (e.key === toolShortcut && !e.target.matches("input[type=text], textarea")) {
+					Tools.change(toolName);
+					document.activeElement.blur();
+				}
+			});
+		}
 		var tmp = this.template;
 		if(isExtra){
 			tmp=this.templateExtra;
@@ -209,7 +231,7 @@ Tools.HTML = {
 		return tmp.add(function (elem) {
 			elem.addEventListener("click", callback);
 			elem.id = "toolID-" + toolName;
-			
+			if(oneTouch) elem.classList.add("oneTouch");
 			if(toolIconHTML){
 				elem.getElementsByClassName("tool-icon")[0].innerHTML = toolIconHTML;
 			}else{
@@ -254,7 +276,12 @@ Tools.add = function (newTool) {
 	}
 
 	//Add the tool to the GUI
-	Tools.HTML.addTool(newTool.name, newTool.icon, newTool.iconHTML, newTool.shortcut,newTool.isExtra);
+	Tools.HTML.addTool(newTool.name, 
+		newTool.icon, 
+		newTool.iconHTML, 
+		newTool.shortcut,
+		newTool.isExtra,
+		newTool.oneTouch);
 
 	//There may be pending messages for the tool
 	var pending = Tools.pendingMessages[newTool.name];
@@ -266,6 +293,20 @@ Tools.add = function (newTool) {
 			newTool.draw(msg, false);
 		}
 	}
+};
+
+Tools.onClick = function (toolName,evt) {
+
+	if (!(toolName in Tools.list)) {
+		throw new Error("Trying to select a tool that has never been added!");
+	}
+
+	var tool = Tools.list[toolName];
+
+	//Do something with the GUI
+
+	//Call the start callback of the new tool 
+	tool.onstart(evt);
 };
 
 Tools.change = function (toolName) {
@@ -371,7 +412,7 @@ function batchCall(fn, args) {
 // Call messageForTool recursively on the message and its children
 function handleMessage(message) {
 	//Check if the message is in the expected format
-	if(message.type == "cursor"){
+	if(message.type == "c" && Tools.showOtherCursors){
 		moveCursor(message);
 	}else if(message.type == "sync"){
 		if(message.id == Tools.socket.id)Tools.acceptMsgs = true;
@@ -610,7 +651,7 @@ Tools.getColor = (function color() {
 	var clrs = ["#001f3f", "#0074D9", "#7FDBFF", "#39CCCC", "#3D9970",
 		"#2ECC40", "#01FF70", "#FFDC00", "#FF851B", "#FF4136",
 		"#85144b", "#F012BE", "#B10DC9", "#111111", "#AAAAAA"];
-	chooser.value = clrs[Math.random() * clrs.length | 0];
+	var value = chooser.value = clrs[Math.random() * clrs.length | 0];
 	return function () { return chooser.value; };
 })();
 

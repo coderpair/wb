@@ -21,7 +21,7 @@ function renderPath(el, pathstring) {
 
 }
 
-var Tools = {
+var Tools = {  //TODO add objects from other tools
 	"Text": function (el) {
 		return '<text ' +
 			'id="' + htmlspecialchars(el.id || "t") + '" ' +
@@ -106,7 +106,8 @@ function renderBoard(file, callback) {
 }
 
 if (require.main === module) {
-	var HISTORY_FILE = process.argv[2] || path.join(__dirname, "../server-data/board-anonymous.json");
+	const config = require("./configuration.js")
+ 	var HISTORY_FILE = process.argv[2] || path.join(config.HISTORY_DIR, "board-anonymous.json");
 
 	renderBoard(HISTORY_FILE, function (err, rendered) {
 		console.log(rendered);

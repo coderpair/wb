@@ -40,6 +40,7 @@
 		"type": "update",
 		"id": "",
 		"transform":"",
+		"undo":true
 	};
 	
 	var rect = {
@@ -177,7 +178,13 @@
 		if(!transforming)msg.gid=Tools.generateUID("tr"); //tr" for transform
 		transforming=true;
 		if(shape){
-			msg.transform=shape.matrix;
+			if(Array.isArray(shape.matrix)){
+				for(var i = 0; i<shape.matrix.length;i++){
+					msg.updates[i]={transform:shape.matrix[i]};
+				}
+			}else{
+				msg.transform=shape.matrix;
+			}
 			Tools.drawAndSend(msg);
 		}
 
@@ -211,7 +218,7 @@
 						if (!(transforming&&idSelected||elem === null)){ //console.error("Eraser: Tried to delete an element that does not exist.");
 							if (idSelected) deactivateCurrentShape();
 							//console.log(data.transform);
-							elem.setAttribute("transform", data.transform[i]);
+							elem.setAttribute("transform", data.updates[i].transform);
 						}
 					}
 				}else{
@@ -271,6 +278,7 @@
 			shape = new Transform(target,rect);
 			msg.id = [];
 			shape.id = [];
+			msg.updates = [];
 			for(var i = 0;i<target.length;i++){
 				msg.id.push(target[i].id);
 				shape.id.push(target[i].id);
@@ -289,6 +297,7 @@
 			}
 			if ( shape != null )
 				msg.id=shape.id=target.id;
+			delete msg.updates;
 		}
 		if ( shape != null ) {
 			shape.realize();

@@ -40,7 +40,9 @@ git clone git@github.com:rdbeach/wb.git
 cd wb
 ```
 
-Then [install node.js](https://nodejs.org/en/download/) if you don't have it already, then install WB's dependencies:
+Then [install node.js](https://nodejs.org/en/download/) (v10.0 or superior)
+ if you don't have it already, then install WBO's dependencies:
+
 ```
 npm install
 ```

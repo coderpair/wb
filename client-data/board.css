@@ -111,7 +111,8 @@ html, body, svg {
 	transition-duration: .2s;
 	overflow: hidden;
 	width: max-content;
-	box-shadow: inset 0 0 3px #8FA2BC;
+	box-shadow: 0 0 3px #7FB2CC;
+	/*box-shadow: inset 0 0 3px #8FA2BC;*/
 }
 
 #menu .tool:focus-within,
@@ -142,7 +143,8 @@ html, body, svg {
 	transition-duration: .2s;
 	overflow: hidden;
 	width: max-content;
-	box-shadow: inset 0 0 3px #8FA2BC;
+	box-shadow: 0 0 3px #7FB2CC;
+	/*box-shadow: inset 0 0 3px #8FA2BC;*/
 }
 
 #menu .tool-popout:focus-within,
@@ -166,9 +168,20 @@ html, body, svg {
 	display:inline-block
 }
 
+#menu .oneTouch:active {
+	border-radius: 3px;
+	background-color:#eeeeff;
+  }
+
+#menu .tool:active {
+	box-shadow: inset 0 0 1px #ddeeff;
+	background-color:#eeeeff;
+	//box-shadow: inset 0 0 3px #7FB2CC, 0 0 5px #0064d9;
+  }
+
 
 #menu .tool.curTool, #menu .tool-extra.curTool {
-  box-shadow: 0 0 5px #0074c9;
+  box-shadow: 0 0 5px #0064d9;
   //background: linear-gradient(#96E1FF, #36A2FF);
 }
 

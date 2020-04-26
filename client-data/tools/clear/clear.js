@@ -31,11 +31,12 @@
 		"type": "clear"
 	};
 
-	function clearBoard(x, y, evt, isTouchEvent) {
+	function clearBoard(evt) {
 		if($("#menu").width()>Tools.menu_width+3)return;
         evt.preventDefault();
 		Tools.acceptMsgs = false;
-		Tools.drawAndSend(msg);
+		draw(msg, true);
+		Tools.send(msg,"Clear");
 	};
 
 	function draw(data) {
@@ -56,10 +57,10 @@
 		"name": "Clear",
 		"icon": "🗑",
 		//"shortcut": "e",
-		"listeners": {
-			"press": clearBoard
-		},
+		"listeners": {},
 		"draw": draw,
+		"oneTouch":true,
+		"onstart":clearBoard,
 		"mouseCursor": "crosshair",
 	});
 

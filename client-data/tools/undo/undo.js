@@ -31,10 +31,10 @@
 		"type": "undo"
 	};
 
-	function undo(x, y, evt, isTouchEvent) {
-		if($("#menu").width()>Tools.menu_width+3)return;
-        	evt.preventDefault();
-		Tools.drawAndSend(msg);
+	function undo(evt) {
+			evt.preventDefault();
+		draw(msg);
+		Tools.send(msg,"Undo");
 	};
 
 	function draw(data) {
@@ -55,11 +55,11 @@
 		"icon": "🗑",
 		"iconHTML":"<i style='color: #39CCCC;margin-top:7px' class='fas fa-undo-alt'></i>",
 		//"shortcut": "e",
-		"listeners": {
-			"press": undo
-		},
+		"listeners": {},
 		"draw": draw,
 		"isExtra":true,
+		"oneTouch":true,
+		"onstart":undo,
 		"mouseCursor": "crosshair",
 	});
 

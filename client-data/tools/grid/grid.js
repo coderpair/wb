@@ -26,14 +26,14 @@
 
 (function grid() { //Code isolation
 
-	var toggle=0;
+	var toggle=1; //grid on by default
 	var msg = {
 		"type": "grid",
 		"id":"",
 		"toggle":toggle
 	};
 
-	function toggleGrid(x, y, evt, isTouchEvent) {
+	function toggleGrid(evt) {
 		if($("#menu").width()>Tools.menu_width+3)return;
         	evt.preventDefault();
 		if(toggle){
@@ -68,10 +68,10 @@
 		"icon": "🗑",
 		"iconHTML":"<i style='color:gray;margin-top:7px'  class='fas fa-th'></i>",
 		//"shortcut": "e",
-		"listeners": {
-			"press": toggleGrid
-		},
+		"listeners": {},
 		"draw": draw,
+		"oneTouch":true,
+		"onstart":toggleGrid,
 		"mouseCursor": "crosshair",
 	});
 
