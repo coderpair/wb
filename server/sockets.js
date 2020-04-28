@@ -120,12 +120,15 @@ function socketConnection(socket) {
 
 function handleMsg(board, message, socket) {
 
-
-	if(message.type != "c"){
-		
+	if(message.type != "c" && message.type != "e"){
 		board.updateMsgCount(socket.id);
-	}else{
-		message.socket=socket.id;
+	}
+
+	//Broadcast socket Id when displaying pointer so we know whose pointer it is.
+	//Update and child events will also broadcast pointer location
+	if(config.DISPLAY_POINTERS && (message.type == "c" || 
+			message.type == "update" || message.type == "child")){
+				message.socket=socket.id;
 	}
 
 	if(message.type == "clear" || message.type == "undo" || message.type == "redo"){ 
@@ -162,8 +165,12 @@ function handleMsg(board, message, socket) {
 		//Send message to all other users connected on the same board
 		socket.broadcast.to(board.name).emit('broadcast', message);
 
+		//Not going to save the socket
+		delete message.socket;
 		switch (message.type) {
-			case "c":
+			case "c":  //cursor
+				break;
+			case "e":  //echo
 				break;
 			case "delete":
 				if (message.id) board.delete(message.id, socket.id);

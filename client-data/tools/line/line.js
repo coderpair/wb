@@ -27,6 +27,7 @@
 (function () { //Code isolation
 	//Indicates the id of the line the user is currently drawing or an empty string while the user is not drawing
 	var curLineId = "",
+		end = false,
 		lastTime = performance.now(); //The time at which the last point was drawn
 
 	//The data of the message that will be sent for every update
@@ -41,7 +42,7 @@
 
 		//Prevent the press from being interpreted by the browser
 		evt.preventDefault();
-
+		Tools.suppressPointerMsg = true;
 		curLineId = Tools.generateUID("s"); //"s" for straight line
 
 		Tools.drawAndSend({
@@ -59,7 +60,7 @@
 		/*Wait 70ms before adding any point to the currently drawing line.
 		This allows the animation to be smother*/
 		if (curLineId !== "") {
-			if (performance.now() - lastTime > 70) {
+			if (performance.now() - lastTime > 70 || end) {
 				Tools.drawAndSend(new UpdateMessage(x, y));
 				lastTime = performance.now();
 			} else {
@@ -71,7 +72,10 @@
 
 	function stopLine(x, y) {
 		//Add a last point to the line
+		end = false;
 		continueLine(x, y);
+		end = true;
+		Tools.suppressPointerMsg = false;
 		curLineId = "";
 	}
 

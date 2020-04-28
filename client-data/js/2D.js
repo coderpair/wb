@@ -10,8 +10,8 @@
 var svg = document.getElementById("canvas");
 var D2isTouch = false;
 Array.prototype.foreach=function(func){var length=this.length;for(var i=0;i<length;i++){func(this[i]);}};
-Array.prototype.grep=function(func){var length=this.length;var result=[];for(var i=0;i<length;i++){var elem=this[i];if(func(elem)){result.push(elem);}}return result;};
-Array.prototype.map=function(func){var length=this.length;var result=[];for(var i=0;i<length;i++){result.push(func(this[i]));}return result;};
+//Array.prototype.grep=function(func){var length=this.length;var result=[];for(var i=0;i<length;i++){var elem=this[i];if(func(elem)){result.push(elem);}}return result;};
+//Array.prototype.map=function(func){var length=this.length;var result=[];for(var i=0;i<length;i++){result.push(func(this[i]));}return result;};
 Array.prototype.min=function(){var length=this.length;var min=this[0];for(var i=0;i<length;i++){var elem=this[i];if(elem<min)min=elem;}return min;}
 Array.prototype.max=function(){var length=this.length;var max=this[0];for(var i=0;i<length;i++)var elem=this[i];if(elem>max)max=elem;return max;}
 AntiZoomAndPan.VERSION="1.2"

@@ -66,7 +66,7 @@
 	function startLine(x, y, evt) {
 		//Prevent the press from being interpreted by the browser
 		//evt.preventDefault();
-
+		Tools.suppressPointerMsg = true;
 		curLineId = Tools.generateUID("l"); //"l" for line
 
 		Tools.drawAndSend({
@@ -97,6 +97,7 @@
 		continueLine(x, y);
 		end=false;
 		curLineId = "";
+		Tools.suppressPointerMsg = false;
 	}
 
 	var renderingLine = {};

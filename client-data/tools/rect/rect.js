@@ -45,6 +45,7 @@
 
 		//Prevent the press from being interpreted by the browser
 		evt.preventDefault();
+		Tools.suppressPointerMsg = true;
 		curId = Tools.generateUID("r"); //"r" for rectangle
 		Tools.drawAndSend({
 			'type': 'rect',
@@ -70,7 +71,7 @@
 		This allows the animation to be smother*/
 		if (curId !== "") {
 			curUpdate['x2'] = x; curUpdate['y2'] = y;
-			if (performance.now() - lastTime > 20||end) {
+			if (performance.now() - lastTime > 70 || end) {
 				Tools.drawAndSend(curUpdate);
 				lastTime = performance.now();
 			}
@@ -83,6 +84,7 @@
 		end=true;
 		move(x, y);
 		end=false;
+		Tools.suppressPointerMsg = false;
 		curId = "";
 	}
 

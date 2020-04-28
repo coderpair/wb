@@ -9,6 +9,7 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+  <script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
 	<link rel="stylesheet" type="text/css" href="board.css" />
 	<script src="https://kit.fontawesome.com/0166a4ad2b.js" crossorigin="anonymous"></script>
 	<script src="socket.io.js"></script>
@@ -52,6 +53,7 @@
 			
 		</svg>
 	</div>
+	<div id="calculator" style="display:none;position:absolute;top:19px;left:65px;"></div>
 	<div id="menu">
 		<div id="menuItems">
 			<ul id="tools" class="tools">
@@ -105,7 +107,7 @@
 				</li>
 			</ul>
 		</div>
-	
+		
 
 	</div>
 
@@ -126,6 +128,7 @@
 	<script src="tools/grid/grid.js"></script>
 	<script src="tools/clear/clear.js"></script>
 	<script src="tools/eraser2/eraser2.js"></script>
+	<script src="tools/calculator/calculator.js"></script>
 	<script src="tools/undo/undo.js"></script>
 	<script src="tools/redo/redo.js"></script>
 	<script src="tools/zoom-in/zoom-in.js"></script>

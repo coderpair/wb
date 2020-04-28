@@ -115,6 +115,8 @@ BoardData.prototype.update = function (id, message) {
 				
 	delete message.type;
 	delete message.tool;
+	delete message.tx;
+	delete message.ty;
 			
 	if(Array.isArray(id)){ //Handle bulk update
 		var newData = message.updates  

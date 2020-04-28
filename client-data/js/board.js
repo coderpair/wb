@@ -48,8 +48,10 @@ Tools.menu_width=40;
 Tools.scaleDefaults=[.4,.75,1,1.5,2,4,8];
 Tools.scaleIndex = 2;
 Tools.color = "red";
-Tools.showOtherCursors = true;
-Tools.showMyCursor = true;
+Tools.showOtherPointers = true;
+Tools.showMyPointer = true;
+Tools.suppressPointerMsg = false;
+const MAX_CURSOR_UPDATES_PER_SECOND = 20;
 
 
 Tools.socket = null,
@@ -115,21 +117,29 @@ Tools.boardName = (function () {
 Tools.svg.addEventListener("mousemove", handleMarker, false);
 Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
 
+lastPointerUpdate = 0;
+
+var ptrMessage = {
+	"board": Tools.boardName,
+	"data": {
+		type:"c"
+	}
+};
+
 function handleMarker(evt){
-	if(Tools.showMyCursor){
-		var message = {
-			"board": Tools.boardName,
-			"data": {
-				type:"c",
-				x : evt.pageX / Tools.getScale(),
-				y : evt.pageY / Tools.getScale(),
-				c : Tools.getColor()
-			}
-		}
-		Tools.socket.emit('broadcast', message);
+	var cur_time = Date.now();
+	if(Tools.showMyPointer && !Tools.suppressPointerMsg && lastPointerUpdate < cur_time - (1000/MAX_CURSOR_UPDATES_PER_SECOND) ){
+		lastPointerUpdate = cur_time;
+		ptrMessage.data.x = evt.pageX / Tools.getScale(),
+		ptrMessage.data.y = evt.pageY / Tools.getScale(),
+		ptrMessage.data.c = Tools.getColor()
+			
+		Tools.socket.emit('broadcast', ptrMessage);
 	}
 	if(Tools.showMarker){
-		moveMarker(message.data);
+		ptrMessage.data.x = evt.pageX / Tools.getScale(),
+		ptrMessage.data.y = evt.pageY / Tools.getScale(),
+		moveMarker(ptrMessage.data);
 	}
 	
 };
@@ -141,6 +151,7 @@ function moveMarker(message) {
 		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='mycursor' cx='100' cy='100' r='10' fill='#e75480' />";
 		cursor = Tools.svg.getElementById("mycursor");
 	}
+	
 	Tools.svg.appendChild(cursor);
 	//cursor.setAttributeNS(null, "r", Tools.getSize());
 	cursor.r.baseVal.value=Tools.getSize()/2;
@@ -150,7 +161,7 @@ function moveMarker(message) {
 
 var cursorLastUse={};
 
-function moveCursor(message) {
+function movePointer(message) {
 	var cursor = Tools.svg.getElementById("cursor"+message.socket);
 	if(!cursor){ 
 		var cursors = Tools.svg.getElementsByClassName("opcursor");
@@ -165,12 +176,12 @@ function moveCursor(message) {
 		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='cursor"+message.socket+"' cx='100' cy='100' r='10' fill='orange' />";
 		cursor = Tools.svg.getElementById("cursor"+message.socket);
 		Tools.svg.appendChild(cursor);
-		
 	}
-	cursor.setAttributeNS(null, "fill", message.c);
+	if(message.c)
+		cursor.setAttributeNS(null, "fill", message.c);
 	cursor.setAttributeNS(null, "visibility", "visible");
-	cursor.setAttributeNS(null, "cx", message.x);
-	cursor.setAttributeNS(null, "cy", message.y);
+	cursor.setAttributeNS(null, "cx", message.tx || message.x2 || message.x);
+	cursor.setAttributeNS(null, "cy", message.ty || message.y2 || message.y);
 
 	cursorLastUse[message.socket]=Date.now()
 };
@@ -412,9 +423,13 @@ function batchCall(fn, args) {
 // Call messageForTool recursively on the message and its children
 function handleMessage(message) {
 	//Check if the message is in the expected format
-	if(message.type == "c" && Tools.showOtherCursors){
-		moveCursor(message);
-	}else if(message.type == "sync"){
+
+	//TODO: Right now if you are sending the socket id it is to identify the cursor
+	//and move it. CHange later
+	if((message.type == "c" || message.socket) && Tools.showOtherPointers){
+		movePointer(message);
+	}
+	if(message.type == "sync"){
 		if(message.id == Tools.socket.id)Tools.acceptMsgs = true;
 		//console.log("socket match:" + (message.id == Tools.socket.id));
 		Tools.clearBoard(false);

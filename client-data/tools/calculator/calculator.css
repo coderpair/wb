@@ -1,0 +1,25 @@
+@media only screen and (max-width: 750px) {
+/* CSS rules here for screens lower than 700px */
+	#calculator {
+		width:80%;
+		height:500px;
+	}
+}
+
+@media only screen and (min-width: 750px) {
+/* CSS rules here for screens above 70px */
+
+	#calculator {
+		width:600px;
+		height:450px;
+	}
+}
+
+@media only screen and (max-height: 400px) {
+	/* CSS rules here for screens above 70px */
+	
+		#calculator {
+			height:93%;
+		}
+	}
+

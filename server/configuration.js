@@ -62,6 +62,9 @@ module.exports = {
     /** Maximum physical size of board (50MB) */
     MAX_BOARD_BYTES: parseInt(process.env['MAX_BOARD_BYTES']) || 52428800,
 
+     /** Use a template to validate board data */
+     DISPLAY_POINTERS: process.env['DISPLAY_POINTERS'] || true
+
 }
 
 

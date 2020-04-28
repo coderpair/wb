@@ -84,7 +84,7 @@
 		if(curTool=="multi"){
 			if(makeRect){
 				rect['x2'] = x; rect['y2'] = y;
-				if (performance.now() - lastTime > 20|| end) {
+				if (performance.now() - lastTime > 20 || end) {
 					var shape = svg.getElementById("transform-rect");
 					shape.x.baseVal.value = Math.min(rect['x2'], rect['x']);
 					shape.y.baseVal.value = Math.min(rect['y2'], rect['y']);
@@ -94,6 +94,10 @@
 				}
 			}
 			if (evt) evt.preventDefault();
+		}
+		if(Tools.showMyPointer){
+			msg.tx = x;
+			msg.ty = y;
 		}
 	}
 
@@ -143,8 +147,13 @@
 				}
 			}
 		}
-		transforming = false;
-		
+		if(transforming){
+			end = true;
+			continueTransforming(currShape);
+			end = false;
+			transforming = false;
+		}
+		Tools.suppressPointerMsg = false;
 	}
 
 	function insideRect(x,y,w,h,rx,ry,rx2,ry2){
@@ -175,17 +184,21 @@
 
 
 	function continueTransforming(shape) {
-		if(!transforming)msg.gid=Tools.generateUID("tr"); //tr" for transform
-		transforming=true;
-		if(shape){
-			if(Array.isArray(shape.matrix)){
-				for(var i = 0; i<shape.matrix.length;i++){
-					msg.updates[i]={transform:shape.matrix[i]};
+		if (performance.now() - lastTime > 70 || end) {
+			if(!transforming)msg.gid=Tools.generateUID("tr"); //tr" for transform
+			transforming=true;
+			Tools.suppressPointerMsg = true;
+			if(shape){
+				if(Array.isArray(shape.matrix)){
+					for(var i = 0; i<shape.matrix.length;i++){
+						msg.updates[i]={transform:shape.matrix[i]};
+					}
+				}else{
+					msg.transform=shape.matrix;
 				}
-			}else{
-				msg.transform=shape.matrix;
+				Tools.drawAndSend(msg);
 			}
-			Tools.drawAndSend(msg);
+			lastTime = performance.now();
 		}
 
 	};
