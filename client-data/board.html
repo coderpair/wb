@@ -9,8 +9,7 @@
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
-  <script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
-	<link rel="stylesheet" type="text/css" href="board.css" />
+  	<link rel="stylesheet" type="text/css" href="board.css" />
 	<script src="https://kit.fontawesome.com/0166a4ad2b.js" crossorigin="anonymous"></script>
 	<script src="socket.io.js"></script>
 
@@ -36,7 +35,14 @@
 		});
 	</script>
 	<div id="loadingMessage">Loading</div>
+	<div id="compass">
+		<div id="north" class='direction'><i class="fas fa-chevron-up"></i></div>
+		<div id="west" class='direction'><i class="fas fa-chevron-left"></i></div>
+		<div id="east" class='direction'><i class="fas fa-chevron-right"></i></div>
+		<div id="south" class='direction'><i class="fas fa-chevron-down"></i></div>
+	</div>
 <div id="board">
+		
 		<svg id="canvas"  width="500" height="500" viewBox= "0 0 500 500" + svgHeightversion="1.1" xmlns="http://www.w3.org/2000/svg" >
 			 <defs id="defs">
       				<pattern id="smallGrid" width="30" height="30" patternUnits="userSpaceOnUse">
@@ -48,7 +54,7 @@
       				</pattern>
     			</defs>
     			<rect onmousedown="mouser.unregisterShapes()" style="display:block" id="rect_1" width="100%" height="100%" fill="url(#grid)" />
-			<cursors id="cursors"></cursors>
+				<g id="cursors"></g>
 			<g id="layer-1"></g>
 			
 		</svg>
@@ -128,6 +134,7 @@
 	<script src="tools/grid/grid.js"></script>
 	<script src="tools/clear/clear.js"></script>
 	<script src="tools/eraser2/eraser2.js"></script>
+	<script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
 	<script src="tools/calculator/calculator.js"></script>
 	<script src="tools/undo/undo.js"></script>
 	<script src="tools/redo/redo.js"></script>

@@ -33,7 +33,7 @@
 		erase=false;
 	var curPen = {
 		"penSize":4,
-		"eraserSize":16
+		"eraserSize":25
 	};
 	//The data of the message that will be sent for every new point
 	function msg(x, y) {
@@ -82,7 +82,7 @@
 
 	function continuePath(x, y, evt) {
 		/*Wait 20ms before adding any point to the currently drawing path. This allows the animation to be smother*/
-		if (erase&&(performance.now() - lastTime > 20 || end)) {
+		if (erase&&(performance.now() - lastTime > 100 || end)) {
 			Tools.drawAndSend(new msg(x, y));
 			lastTime = performance.now();
 		}

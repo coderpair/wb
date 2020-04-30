@@ -24,6 +24,9 @@
  * @licend
  */
 
+ //TODO Isolate this code...Expose one object
+ //TODO naming: clean up global vars
+ //TODO config file
 
 var Tools = {};
 var svgWidth, svgHeight;
@@ -31,6 +34,8 @@ var svgWidth, svgHeight;
 Tools.board = document.getElementById("board");
 Tools.svg = document.getElementById("canvas");
 Tools.group = Tools.svg.getElementById("layer-1");
+
+Tools.compass = document.getElementById("compass");
 
 
 //Initialization
@@ -52,7 +57,7 @@ Tools.showOtherPointers = true;
 Tools.showMyPointer = true;
 Tools.suppressPointerMsg = false;
 const MAX_CURSOR_UPDATES_PER_SECOND = 20;
-
+const DISPLAY_ACTIVITY_MONITOR = true;
 
 Tools.socket = null,
 Tools.connect = function() {
@@ -117,7 +122,16 @@ Tools.boardName = (function () {
 Tools.svg.addEventListener("mousemove", handleMarker, false);
 Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
 
-lastPointerUpdate = 0;
+
+var lastPointerUpdate = 0;
+var cursorLastUse={};
+var cursors={};
+var transitions = [false,false,false,false];
+var directions = [
+	document.getElementById("north"),
+	document.getElementById("east"),
+	document.getElementById("south"),
+	document.getElementById("west")];
 
 var ptrMessage = {
 	"board": Tools.boardName,
@@ -144,7 +158,6 @@ function handleMarker(evt){
 	
 };
 
-
 function moveMarker(message) {
 	var cursor = Tools.svg.getElementById("mycursor");
 	if(!cursor){ 
@@ -159,32 +172,97 @@ function moveMarker(message) {
         cursor.setAttributeNS(null, "cy", message.y-25);
 };
 
-var cursorLastUse={};
+setInterval(function(){ 
+	for(var i in cursors){
+		if(Date.now()-cursorLastUse[cursors[i].id]>3000 && cursors[i].style.opacity!=.2){
+			$(cursors[i]).fadeTo( 1500, .2 )
+		}
+	}
+ }, 2000);
 
 function movePointer(message) {
-	var cursor = Tools.svg.getElementById("cursor"+message.socket);
+	var cursor = cursors["cursor"+message.socket];
+	//var cursor = document.getElementById("cursor"+message.socket);
 	if(!cursor){ 
-		var cursors = Tools.svg.getElementsByClassName("opcursor");
-		for(var i = 0; i < cursors.length; i++)
+		var cursorList = Tools.svg.getElementsByClassName("opcursor");
+		//var cursors = document.getElementsByClassName("opcursor");
+		for(var i = 0; i < cursorList.length; i++)
 		{
-			if(Date.now()-cursorLastUse[message.socket]>180000){
-				cursors[i].remove();
+			if(Date.now()-cursorLastUse["cursor"+message.socket]>180000){
+				cursors[cursorList[i].id].remove();
+				delete cursors[cursorList[i].id];
 			}else{
-				cursors[i].setAttributeNS(null, "visibility", "hidden");
+				cursorList[i].setAttributeNS(null, "visibility", "hidden");
 			}
 		}
-		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='cursor"+message.socket+"' cx='100' cy='100' r='10' fill='orange' />";
+		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='cursor"+message.socket+"' cx='0' cy='0' r='10' fill='orange' />";
+		//$(Tools.board).append("<div style='width:20px;height:20px' class='opcursor' id='cursor"+message.socket+"'><svg><circle cx='10' cy='10' r='10' fill='orange'></circle></svg></div>");
+		//cursor = document.getElementById("cursor"+message.socket);
 		cursor = Tools.svg.getElementById("cursor"+message.socket);
 		Tools.svg.appendChild(cursor);
+		cursors["cursor"+message.socket]= cursor;
 	}
 	if(message.c)
 		cursor.setAttributeNS(null, "fill", message.c);
 	cursor.setAttributeNS(null, "visibility", "visible");
+	$(cursor).stop(true);
+	cursor.style.opacity = .75;
+	//cursor.style.visibility = "visible"
+	//cursor.style.transform = "translate(" + (message.tx || message.x2 || message.x) + "px, " +  (message.ty || message.y2 || message.y) + "px)";
 	cursor.setAttributeNS(null, "cx", message.tx || message.x2 || message.x);
 	cursor.setAttributeNS(null, "cy", message.ty || message.y2 || message.y);
 
-	cursorLastUse[message.socket]=Date.now()
+	// Activity monitor
+	if(DISPLAY_ACTIVITY_MONITOR){
+		updateActivityMonitor(cursor);
+	}
+	cursorLastUse["cursor"+message.socket]=Date.now()
 };
+
+function updateActivityMonitor(cursor){
+	var bounding = cursor.getBoundingClientRect();
+	var region = [0,0,0,0]; //t r b l
+	if (bounding.top < -20){
+		region[0] = 1;
+		region[2] = 0;
+	}else if(bounding.bottom > 20 + (window.innerHeight || document.documentElement.clientHeight)){
+		region[2] = 1;
+		region[0] = 0;
+	}
+	
+	if(bounding.left < -20){
+		region[3] = 1;
+		region[1] = 0;
+	}else if(bounding.right > 20 + (window.innerWidth || document.documentElement.clientWidth)){
+		region[3] = 0;
+		region[1] = 1;
+	}
+	
+	if(region[0]+region[1]+region[2]+region[3]) {
+		$(Tools.compass).fadeIn();
+		for(var i = 0; i < 4; i++){
+			if(!region[i]){
+				$(directions[i]).css({'opacity' : '0.15'});
+			}
+			if(!transitions[i]&&region[i]){
+				$(directions[i]).css({'opacity' : '1'});
+				transitions[i] = true;
+				((elem,i) => {
+					elem.fadeTo(100,.4,function(){
+						elem.fadeTo(100,1,function(){
+								transitions[i] = false;
+						})
+					});
+				})($(directions[i]),i);
+			}
+		}
+		//console.log('Not in the viewport..');
+	} else {
+		//console.log('In the viewport!');
+		$(Tools.compass).stop(true);
+		$(Tools.compass).fadeOut();
+	}
+}
 
 Tools.clearBoard = function(deleteMsgs){
 	Tools.showMarker = false;

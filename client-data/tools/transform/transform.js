@@ -31,7 +31,7 @@
 	var transforming = false;
 	var currShape = null;
 	var curTool = "single";
-	var icons = ["<span style='margin-top:-4px;opacity:.5;background-color:#fff'>"+`<img src='data:image/svg+xml;utf8,`+img1+`' >`+"</span>","<span style='margin-top:-4px;opacity:.5;background-color:#fff'>"+`<img src='data:image/svg+xml;utf8,`+img2+`' >`+"</span>"];
+	var icons = ["<span style='margin-top:-4px;opacity:.5;background-color:#fff'>"+`<img draggable="false" src='data:image/svg+xml;utf8,`+img1+`' >`+"</span>","<span style='margin-top:-4px;opacity:.5;background-color:#fff'>"+`<img draggable="false" src='data:image/svg+xml;utf8,`+img2+`' >`+"</span>"];
 	var end = false;
 	var lastTime = performance.now(); //The time at which the last point was drawn
     var makeRect = false;
