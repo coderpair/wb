@@ -455,7 +455,9 @@ Tools.send = function (data, toolName) {
 		"board": Tools.boardName,
 		"data": d
 	}
-	Tools.msgs.push({curTool:Tools.curTool,msg:message});
+	if(message.data.type != "c" && message.data.type != "e"){
+		Tools.msgs.push({curTool:Tools.curTool,msg:message});
+	}
 	Tools.socket.emit('broadcast', message);
 };
 
