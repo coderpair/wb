@@ -189,7 +189,9 @@ function movePointer(message) {
 		for(var i = 0; i < cursorList.length; i++)
 		{
 			if(Date.now()-cursorLastUse["cursor"+message.socket]>180000){
-				cursors[cursorList[i].id].remove();
+				if(cursors[cursorList[i].id]){
+					cursors[cursorList[i].id].remove();
+				}
 				delete cursors[cursorList[i].id];
 			}else{
 				cursorList[i].setAttributeNS(null, "visibility", "hidden");
@@ -197,7 +199,8 @@ function movePointer(message) {
 		}
 		Tools.svg.getElementById("cursors").innerHTML="<circle class='opcursor' id='cursor"+message.socket+"' cx='0' cy='0' r='10' fill='orange' />";
 		//$(Tools.board).append("<div style='width:20px;height:20px' class='opcursor' id='cursor"+message.socket+"'><svg><circle cx='10' cy='10' r='10' fill='orange'></circle></svg></div>");
-		//cursor = document.getElementById("cursor"+message.socket);
+		//cursor = document.getElementById("cursor"+message.socket)
+		
 		cursor = Tools.svg.getElementById("cursor"+message.socket);
 		Tools.svg.appendChild(cursor);
 		cursors["cursor"+message.socket]= cursor;
@@ -269,6 +272,9 @@ Tools.clearBoard = function(deleteMsgs){
 	Tools.drawingEvent = true;
 	Tools.eraserCache={};
 	Tools.pathDataCache = {};
+	lastPointerUpdate = 0;
+	cursorLastUse={};
+	cursors={};
 	if(deleteMsgs){
 		Tools.msgs = [];
 		Tools.acceptMsgs=true;
@@ -279,12 +285,12 @@ Tools.clearBoard = function(deleteMsgs){
     		masks[0].parentNode.removeChild(masks[0])
 	};
 	var defs = document.getElementById("defs");
-	var cursors = document.getElementById("cursors");
+	var cursorGroup = document.getElementById("cursors");
 	var rect1 = document.getElementById("rect_1");
 	Tools.svg.innerHTML="";
 	Tools.svg.appendChild(defs);
 	Tools.svg.appendChild(rect1);
-	Tools.svg.appendChild(cursors);
+	Tools.svg.appendChild(cursorGroup);
 	var group = Tools.createSVGElement("g");
 	group.id="layer-"+Tools.layer;
 	//group.style.mask = "url(#mask-layer-"+Tools.layer+")"
