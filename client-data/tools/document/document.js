@@ -20,7 +20,7 @@ function onstart() {
             image.onload = function () {
     
             var uid = Tools.generateUID("doc"); // doc for document
-            console.log(image.src.toString().length);
+            // console.log(image.src.toString().length);
             
             var msg = {
                 id: uid,

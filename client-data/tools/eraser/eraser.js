@@ -37,13 +37,6 @@
 	var makeRect = false;
 	var textElem;
 
-	var msg = {
-		"type": "delete",
-		"id": null,
-		"x":0,
-		"y":0
-	};
-
 	var rect = {
 		x:0,
 		y:0,
@@ -115,6 +108,10 @@
 					}
 				);
 				if(targets.length>0){
+					var msg = {
+						"type": "delete",
+						"id": null
+					};
 					msg.id = [];
 					for(var i = 0;i<targets.length;i++){
 						msg.id.push(targets[i].id);
@@ -174,10 +171,11 @@
 			}
 			if(false || evt.type === "touchmove"){
 				if (erasing && target !== Tools.svg && target.id) {
+					var msg = {
+						"type": "delete",
+						"id": null
+					};
 					msg.id = target.id;
-					msg.x = x;
-					msg.y = y;
-					msg.target = target;
 					if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
 						var elem = svg.getElementById(msg.id);
 						if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
@@ -186,7 +184,7 @@
 							var c = elem.getAttribute("class");
 							if(c && c.startsWith("layer-")){
 								layer = parseInt(c.substr(6));
-								if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
+								if(shouldDelete(x,y,layer))Tools.drawAndSend(msg);
 							}
 						}
 					}
@@ -241,10 +239,11 @@
 		target=document.elementFromPoint((x+i)*Tools.scale-document.documentElement.scrollLeft, (y+j)*Tools.scale-document.documentElement.scrollTop);
 
 		if (target && target !== Tools.svg) {
+			var msg = {
+				"type": "delete",
+				"id": null
+			};
 			msg.id = target.id;
-			msg.x = x+i;
-			msg.y = y+j;
-			msg.target = target;
 			if(!msg.id.startsWith("layer")&&msg.id!="defs"&&msg.id!="rect_1"&&msg.id!="cursors"){
 				var elem = svg.getElementById(msg.id);
 				if (elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
@@ -253,7 +252,7 @@
 					var c = elem.getAttribute("class");
 					if(c && c.startsWith("layer-")){
 						layer = parseInt(c.substr(6));
-						if(shouldDelete(msg.x,msg.y,layer))Tools.drawAndSend(msg);
+						if(shouldDelete(x+i,y+j,layer))Tools.drawAndSend(msg);
 						return true
 					}
 				}

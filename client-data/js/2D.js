@@ -244,7 +244,21 @@ Shape.prototype.registerHandles=function(){};
 Shape.prototype.unregisterHandles=function(){};
 Shape.prototype.selectHandles=function(select){};
 Shape.prototype.showHandles=function(state){};
-Shape.prototype.mousedown=function(e){if(!this.locked){if(e.shiftKey){if(this.selected){mouser.unregisterShape(this);}else{mouser.registerShape(this);this.showHandles(true);this.selectHandles(true);this.registerHandles();}}else{if(this.selected){this.selectHandles(true);this.registerHandles();}else{mouser.unregisterShapes();mouser.registerShape(this);this.showHandles(true);this.selectHandles(false);}}}};
+Shape.prototype.mousedown=function(e){if(!this.locked){if(e.shiftKey){if(this.selected){mouser.unregisterShape(this);}else{mouser.registerShape(this);this.showHandles(true);this.selectHandles(true);this.registerHandles();}}else{if(this.selected){
+    if(this.toggleHandles){
+        if(this.handlesSelected){
+            this.selectHandles(false);
+            this.handlesSelected = false;
+        }else{
+            this.selectHandles(true);
+            this.handlesSelected = true;
+        }
+        this.registerHandles();
+    }else{
+        this.selectHandles(true);
+        this.registerHandles();
+    }
+    }else{mouser.unregisterShapes();mouser.registerShape(this);this.showHandles(true);this.selectHandles(false);console.log("selecting")}}}};
 Circle.prototype=new Shape();
 Circle.prototype.constructor=Circle;
 Circle.superclass=Shape.prototype;
@@ -532,6 +546,8 @@ function Transform(svgNode,rect) {
 Transform.prototype.init = function(target,rect) {
         this.target = target;
         this.id = target.id;
+        this.toggleHandles = true;
+        this.handlesSelected = false;
         var x,y,w,h,b;
         if(Array.isArray(target)){
             this.m=[];

@@ -30,15 +30,8 @@
 	shapeIcons = ["▢","◯"],
 	end=false,
 	curId = "",
-		curUpdate = { //The data of the message that will be sent for every new point
-			'type': 'update',
-			'id': "",
-			'shape':curshape,
-			'x': 0,
-			'y': 0,
-			'x2': 0,
-			'y2': 0
-		},
+	lastX = 0,
+	lastY = 0,
 	lastTime = performance.now(); //The time at which the last point was drawn
 
 	function start(x, y, evt) {
@@ -60,16 +53,21 @@
 			'y2': y
 		});
 
-		curUpdate.id = curId;
-		curUpdate.shape=curshape;
-		curUpdate.x = x;
-		curUpdate.y = y;
+		lastX = x;
+		lastY = y;
 	}
 
 	function move(x, y, evt) {
 		/*Wait 20ms before adding any point to the currently drawing shape.
 		This allows the animation to be smother*/
 		if (curId !== "") {
+			var curUpdate = { //The data of the message that will be sent for every new point
+				'type': 'update',
+				'id': curId,
+				'shape':curshape,
+				'x': lastX,
+				'y': lastY
+			}
 			curUpdate['x2'] = x; curUpdate['y2'] = y;
 			if (performance.now() - lastTime > 70 || end) {
 				Tools.drawAndSend(curUpdate);

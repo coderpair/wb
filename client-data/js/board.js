@@ -83,15 +83,12 @@ Tools.connect = function() {
     window.setTimeout( 'Tools.connect()', 20 );
   } );
   this.socket.on("broadcast", function (msg) {
-	//console.log( 'msg' );
 	handleMessage(msg).then(function () {
-		if(msg.type=='sync'){
-			//console.log("sync");
-			//console.log(Tools.msgs.length + "  " + msg.msgCount);
+		if(msg.type=='sync' && Tools.acceptMsgs){
 			if(Tools.msgs.length>msg.msgCount){
-				for(var i = msg.msgCount;i<Tools.msgs.length;i++){
-					Tools.msgs[i].curTool.draw(Tools.msgs[i].msg, true);
-				}
+				var msgs =Tools.msgs.slice(msg.msgCount);
+				console.log("out of sync: " + JSON.stringify(msgs));
+				handleMessage({_children: msgs});
 			}
 		}
 
@@ -189,9 +186,7 @@ function movePointer(message) {
 		for(var i = 0; i < cursorList.length; i++)
 		{
 			if(Date.now()-cursorLastUse["cursor"+message.socket]>180000){
-				if(cursors[cursorList[i].id]){
-					cursors[cursorList[i].id].remove();
-				}
+				cursors[cursorList[i].id].remove();
 				delete cursors[cursorList[i].id];
 			}else{
 				cursorList[i].setAttributeNS(null, "visibility", "hidden");
@@ -461,10 +456,24 @@ Tools.send = function (data, toolName) {
 		"board": Tools.boardName,
 		"data": d
 	}
-	if(message.data.type != "c" && message.data.type != "e"){
-		Tools.msgs.push({curTool:Tools.curTool,msg:message});
-	}
 	Tools.socket.emit('broadcast', message);
+	// dont save cursor or echo messages
+	if(message.data.type != "c" && message.data.type != "e"){
+		//Dont save multiple updates for the same id or group
+		if(message.data.type == "update" && Tools.msgs.length && Tools.msgs[Tools.msgs.length-1].type =="update"){
+			if((message.data.gid &&
+				(Tools.msgs[Tools.msgs.length-1].gid == message.data.gid)) ||
+				(message.data.id && !Array.isArray(message.data.id) &&
+					(Tools.msgs[Tools.msgs.length-1].id == message.data.id))){
+						Tools.msgs.pop();
+						Tools.msgs.push(0);
+						Tools.msgs.push(message.data);
+						return;
+			}
+		}
+		Tools.msgs.push(message.data);
+	}
+	
 };
 
 Tools.drawAndSend = function (data) {
@@ -509,7 +518,7 @@ function batchCall(fn, args) {
 // Call messageForTool recursively on the message and its children
 function handleMessage(message) {
 	//Check if the message is in the expected format
-
+	if(!message)return;
 	//TODO: Right now if you are sending the socket id it is to identify the cursor
 	//and move it. CHange later
 	if((message.type == "c" || message.socket) && Tools.showOtherPointers){
@@ -517,11 +526,10 @@ function handleMessage(message) {
 	}
 	if(message.type == "sync"){
 		if(message.id == Tools.socket.id)Tools.acceptMsgs = true;
-		//console.log("socket match:" + (message.id == Tools.socket.id));
-		Tools.clearBoard(false);
+		if (Tools.acceptMsgs)Tools.clearBoard(false);
 	}
-	if (message.tool) messageForTool(message);
-	if (message._children) return batchCall(handleMessage, message._children);
+	if (message.tool && Tools.acceptMsgs) messageForTool(message);
+	if (message._children && Tools.acceptMsgs) return batchCall(handleMessage, message._children);
 	else return Promise.resolve();
 }
 /*

@@ -39,6 +39,10 @@ html, body, svg {
     display: none;
 }
 
+/*TESTING MENUS*/
+.popover.mypopover {
+	border: 2px solid blue;
+}
 
 #menu {
 	-ms-overflow-style: none;

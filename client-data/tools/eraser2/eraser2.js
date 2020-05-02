@@ -35,6 +35,7 @@
 		"penSize":4,
 		"eraserSize":25
 	};
+	
 	//The data of the message that will be sent for every new point
 	function msg(x, y) {
 		this.type="child";

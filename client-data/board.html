@@ -30,6 +30,35 @@
 
 <body>
 	<script>
+		//TESTING MENUS
+		
+		var count=0;
+		$(document).ready(function(){
+			 // CREATE SIDE MENU
+			 $('#toolID-Clear').popover({placement:'right',
+			 boundary:'window',
+			 fallbackPlacement: ['right'],
+			 template: '<div class="popover mypopover"  role="tooltip"><h3 class="popover-header"></h3><div class="popover-body"></div></div>',
+			 content:"hello there my name is"}); 
+			
+		 });
+		 // HIDE MENU
+		 var listen = function(e) {
+			console.log(1);
+			var id = (document.getElementsByClassName('popover'))[0].id;
+			console.log(id);
+			// check that your clicked
+			// element has no id=info
+			// and is not child of info
+			if(count>1){
+			if (e.target.id != id && !$('#'+id).find(e.target).length) {
+			$("#"+id).hide();
+				e.stopPropagation();
+			}
+			}count++;
+		};
+		
+		//document.addEventListener("mousedown", listen, true);
 		$(window).on("load", function() {
     	    init();
 		});
@@ -69,7 +98,7 @@
 			<ul class="tools" id="settings">
 		
 				<li class="tool-popout">
-					<span style="outline:none !important" class="tool-icon-popout" tabindex=1 data-trigger="focus" data-toggle="popover" title="Popover Header" data-content="Some content inside the popover">
+					<span style="outline:none !important" class="tool-icon-popout" tabindex=1  data-toggle="popover"  data-content="Some content inside the popover">
 						<i style='color: #0074D9;margin-top:7px' class='fas fa-angle-double-right'></i>
 					</span>
 					<span class="tool-list" id="tool-list">

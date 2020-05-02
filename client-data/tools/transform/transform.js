@@ -34,14 +34,11 @@
 	var icons = ["<span style='margin-top:-4px;opacity:.5;background-color:#fff'>"+`<img draggable="false" src='data:image/svg+xml;utf8,`+img1+`' >`+"</span>","<span style='margin-top:-4px;opacity:.5;background-color:#fff'>"+`<img draggable="false" src='data:image/svg+xml;utf8,`+img2+`' >`+"</span>"];
 	var end = false;
 	var lastTime = performance.now(); //The time at which the last point was drawn
-    var makeRect = false;
-
-	var msg = {
-		"type": "update",
-		"id": "",
-		"transform":"",
-		"undo":true
-	};
+	var makeRect = false;
+	var lastX = 0;
+	var lastY = 0;
+	var msgIds = null;
+	var gid;
 	
 	var rect = {
 		x:0,
@@ -95,10 +92,8 @@
 			}
 			if (evt) evt.preventDefault();
 		}
-		if(Tools.showMyPointer){
-			msg.tx = x;
-			msg.ty = y;
-		}
+		lastX = x;
+		lastY = y;
 	}
 
 	function stop(x, y) {
@@ -185,11 +180,22 @@
 
 	function continueTransforming(shape) {
 		if (performance.now() - lastTime > 70 || end) {
-			if(!transforming)msg.gid=Tools.generateUID("tr"); //tr" for transform
+			if(!transforming)gid=Tools.generateUID("tr"); //tr" for transform
 			transforming=true;
 			Tools.suppressPointerMsg = true;
 			if(shape){
+				var msg = {
+					"type": "update",
+					"id": msgIds,
+					"gid":gid,
+					"undo":true
+				};
+				if(Tools.showMyPointer){
+					msg.tx = lastX;
+					msg.ty = lastY;
+				}
 				if(Array.isArray(shape.matrix)){
+					msg.updates = [];
 					for(var i = 0; i<shape.matrix.length;i++){
 						msg.updates[i]={transform:shape.matrix[i]};
 					}
@@ -289,11 +295,10 @@
 		var shape;
 		if(Array.isArray(target)){
 			shape = new Transform(target,rect);
-			msg.id = [];
+			msgIds = [];
 			shape.id = [];
-			msg.updates = [];
 			for(var i = 0;i<target.length;i++){
-				msg.id.push(target[i].id);
+				msgIds.push(target[i].id);
 				shape.id.push(target[i].id);
 			};
 		}else{
@@ -309,8 +314,7 @@
 					// do nothing for now
 			}
 			if ( shape != null )
-				msg.id=shape.id=target.id;
-			delete msg.updates;
+				msgIds=shape.id=target.id;
 		}
 		if ( shape != null ) {
 			shape.realize();
