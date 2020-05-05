@@ -50,16 +50,15 @@
 		switch (data.type) {
 			//TODO: add the ability to erase only some points in a line
 			case "grid":
-				toggle=data.toggle;
-				var gridCSS="none";
-				if(toggle)gridCSS="block";
-				document.getElementById("rect_1").style.display = gridCSS;
+				var elem = Tools.svg.getElementById("rect_1");
+				elem.setAttribute("fill",(data.toggle?"url(#grid)":"white"));
 				break;
 			default:
 				console.error("Clear: 'clear' instruction with unknown type. ", data);
 				break;
 		}
 	}
+
 
 	var svg = Tools.svg;
 

@@ -7,7 +7,6 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1" />
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
   <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
   	<link rel="stylesheet" type="text/css" href="board.css" />
 	<script src="https://kit.fontawesome.com/0166a4ad2b.js" crossorigin="anonymous"></script>
@@ -30,37 +29,8 @@
 
 <body>
 	<script>
-		//TESTING MENUS
-		/*
-		var count=0;
-		$(document).ready(function(){
-			 // CREATE SIDE MENU
-			 $('#toolID-Clear').popover({placement:'right',
-			 boundary:'window',
-			 fallbackPlacement: ['right'],
-			 template: '<div class="popover mypopover"  role="tooltip"><h3 class="popover-header"></h3><div class="popover-body"></div></div>',
-			 content:"hello there my name is"}); 
-			
-		 });
-		 // HIDE MENU
-		 var listen = function(e) {
-			console.log(1);
-			var id = (document.getElementsByClassName('popover'))[0].id;
-			console.log(id);
-			// check that your clicked
-			// element has no id=info
-			// and is not child of info
-			if(count>1){
-			if (e.target.id != id && !$('#'+id).find(e.target).length) {
-			$("#"+id).hide();
-				e.stopPropagation();
-			}
-			}count++;
-		};
-		*/
-		//document.addEventListener("mousedown", listen, true);
 		$(window).on("load", function() {
-    	    init();
+			init();
 		});
 	</script>
 	<div id="loadingMessage">Loading</div>
@@ -89,7 +59,7 @@
 		</svg>
 	</div>
 	<div id="calculator" style="display:none;position:absolute;top:19px;left:65px;"></div>
-	<div id="menu">
+	<div id="menu" class="menu">
 		<div id="menuItems">
 			<ul id="tools" class="tools">
 				<li class="tool"><span class="tool-icon"></span></li>
@@ -142,10 +112,8 @@
 				</li>
 			</ul>
 		</div>
-		
-
 	</div>
-
+	<div id="template" style="display:none;"></div>
 	<script src="js/2D.js"></script>
 	<script src="js/Init2D.js"></script>
 	<script type="application/json" id="translations">{}</script>

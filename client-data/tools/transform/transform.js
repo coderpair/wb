@@ -304,6 +304,7 @@
 		}else{
 			switch ( target.localName ) {
 				case "circle":  shape = new Transform(target);   break;
+				case "ellipse": shape = new Transform(target);   break;
 				case "text": shape = new Transform(target);   break;
 				case "image":  shape = new Transform(target);   break;
 				case "line":    shape = new Transform(target);   break;

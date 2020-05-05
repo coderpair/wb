@@ -52,7 +52,6 @@
 		}
 	}
 
-
 	Tools.add({ //The new tool
 		"name": "Clear",
 		"icon": "🗑",

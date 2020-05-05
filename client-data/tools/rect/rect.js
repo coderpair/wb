@@ -26,8 +26,30 @@
 
 (function () { //Code isolation
 	//Indicates the id of the shape the user is currently drawing or an empty string while the user is not drawing
+	var ellipse = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"  viewBox="0 0 512 512" style="enable-background:new 0 0 512 512;"><g><path id="submenu-rect-path" fill="';
+	var ellipse2 = '" d="M435.204,126.967C387.398,94.1,324.11,76,257,76c-67.206,0-130.824,18.084-179.138,50.922C27.652,161.048,0,206.889,0,256c0,49.111,27.652,94.952,77.862,129.078C126.176,417.916,189.794,436,257,436c67.11,0,130.398-18.1,178.204-50.967C484.727,350.986,512,305.161,512,256S484.727,161.014,435.204,126.967z M418.208,360.312C375.354,389.774,318.103,406,257,406 c-61.254,0-118.884-16.242-162.273-45.733C52.986,331.898,30,294.868,30,256s22.986-75.898,64.727-104.267C138.116,122.242,195.746,106,257,106c61.103,0,118.354,16.226,161.208,45.688C459.345,179.97,482,217.015,482,256S459.345,332.03,418.208,360.312z"/></g></svg>';
+			
+	 var icons = {
+			"Rectangle":{
+				icon:"▢",
+				isHTML:false,
+				isSVG:false
+			},
+			"Circle":{
+					icon:"◯",
+					isHTML:false,
+					isSVG:false
+			},
+			"Ellipse":{
+				icon: `<span><img style = 'margin-top:-7px;' draggable="false" src='data:image/svg+xml;utf8,` + ellipse + `black` + ellipse2 + `' ></span>`,
+				menuIcon:`<span><img style = 'margin-top:-7px;' draggable="false" src='data:image/svg+xml;utf8,` + ellipse + `gray` + ellipse2 + `' ></span>`,
+				menuIconActive:`<span><img style = 'margin-top:-7px;' draggable="false" src='data:image/svg+xml;utf8,` + ellipse + `green` + ellipse2 + `' ></span>`,
+				isHTML:true,
+				isSVG:true
+			}
+	 };
+	
 	var curshape="Rectangle",
-	shapeIcons = ["▢","◯"],
 	end=false,
 	curId = "",
 	lastX = 0,
@@ -108,6 +130,8 @@
 				
 				if(data.shape=="Circle"){
 					updateCircle(shape, data);
+				}else if(data.shape=="Ellipse"){
+					updateEllipse(shape, data);
 				}else{
 					updateRect(shape, data);
 				}
@@ -125,6 +149,9 @@
 		if(data.shape=="Circle"){
 			if(!shape) shape = Tools.createSVGElement("circle");
 			updateCircle(shape, data);
+		}else if(data.shape=="Ellipse"){
+			if(!shape) shape = Tools.createSVGElement("ellipse");
+			updateEllipse(shape, data);
 		}else{
 			if(!shape) shape = Tools.createSVGElement("rect");
 			updateRect(shape, data);
@@ -143,8 +170,8 @@
 	function updateRect(shape, data) {
 		shape.x.baseVal.value = Math.min(data['x2'], data['x']);
 		shape.y.baseVal.value = Math.min(data['y2'], data['y']);
-		shape.width.baseVal.value = Math.abs(data['x2'] - data['x']);
-		shape.height.baseVal.value = Math.abs(data['y2'] - data['y']);
+		shape.width.baseVal.value = Math.max(1,Math.abs(data['x2'] - data['x']));
+		shape.height.baseVal.value = Math.max(1,Math.abs(data['y2'] - data['y']));
 		shape.setAttribute("fill", "none");
 		if(data.transform)
 			shape.setAttribute("transform",data.transform);
@@ -153,28 +180,97 @@
 	function updateCircle(shape, data) {		
 		shape.cx.baseVal.value = Math.round((data['x2'] + data['x'])/2);
 		shape.cy.baseVal.value = Math.round((data['y2'] + data['y'])/2);
-		shape.r.baseVal.value = Math.round(Math.sqrt(Math.pow(data['x2'] - data['x'],2)+Math.pow(data['y2'] - data['y'],2))/2);
+		shape.r.baseVal.value = Math.max(1,Math.round(Math.sqrt(Math.pow(data['x2'] - data['x'],2)+Math.pow(data['y2'] - data['y'],2))/2));
 		shape.setAttribute("fill", "none");
 		if(data.transform)
 			shape.setAttribute("transform",data.transform);
 	}
 
+	function updateEllipse(shape, data) {		
+		shape.cx.baseVal.value = Math.round((data['x2'] + data['x'])/2);
+		shape.cy.baseVal.value = Math.round((data['y2'] + data['y'])/2);
+		shape.rx.baseVal.value = Math.max(1,Math.abs(Math.round((data['x2'] - data['x'])/2)));
+		shape.ry.baseVal.value = Math.max(1,Math.abs(Math.round((data['y2'] - data['y'])/2)));
+		shape.setAttribute("fill", "none");
+		if(data.transform)
+			shape.setAttribute("transform",data.transform);
+	}
+
+    
 	function toggle(elem){
-		var index = 0;
 		if(curshape=="Rectangle"){
-			curshape="Circle";
-			index=1;
+			curshape=menuShape;
+			if(!menuInitialized)initMenu(elem);
+			Tools.menus["Rectangle"].show(true);
+		}else if(Tools.menus["Rectangle"].menuOpen()){
+			Tools.menus["Rectangle"].show(false);
 		}else{
 			curshape="Rectangle";
 		}
-		elem.getElementsByClassName("tool-icon")[0].textContent = shapeIcons[index];
+		changeButtonIcon();
+	};
+
+	var menuInitialized = false;
+	var menuShape = "Circle";
+	var button;
+
+	function initMenu(elem){
+		button = elem;
+		var btns = document.getElementsByClassName("submenu-rect");
+		for(var i = 0; i < btns.length; i++){
+			btns[i].addEventListener("click", menuButtonClicked);
+		}
+		updateMenu("Circle")
+		menuInitialized = true;
+	};
+
+	var menuButtonClicked = function(){
+			menuShape = this.id.substr(13);
+			curshape = menuShape;
+			updateMenu(menuShape);
+			changeButtonIcon();
+	};
+
+	var changeButtonIcon = function(){
+		if(icons[curshape].isHTML){
+			button.getElementsByClassName("tool-icon")[0].innerHTML = icons[curshape].icon;
+		}else{
+			button.getElementsByClassName("tool-icon")[0].textContent = icons[curshape].icon;
+		}
+	};
+
+	var updateMenu = function(shape){
+		var btns = document.getElementsByClassName("submenu-rect");
+		for(var i = 0; i < btns.length; i++){
+			if(icons[btns[i].id.substr(13)].isSVG){
+				btns[i].getElementsByClassName("tool-icon")[0].innerHTML = icons[btns[i].id.substr(13)].menuIcon;
+			}
+			btns[i].style.backgroundColor = "#fff";
+			btns[i].style.color = "gray";
+			btns[i].style.borderRadius = "8px";
+		}
+		var btn = document.getElementById("submenu-rect-" + shape);
+		if(icons[btn.id.substr(13)].isSVG){
+			btn.getElementsByClassName("tool-icon")[0].innerHTML = icons[btn.id.substr(13)].menuIconActive;
+		}
+		btn.style.backgroundColor = "#eeeeff";
+		btn.style.color = "green";
+		btn.style.borderRadius = "8px";
+		
+	};
+
+	function menuListener(elem, onButton, onMenu, e) {
+		if(!onMenu&&!onButton){
+			e.stopPropagation();
+			return true;
+		}
+		return false;
 	};
 
 	Tools.add({ //The new tool
 		// "name": "Rectangle",
 		 "icon": "▢",
         "name": "Rectangle",
-        //"icon": "",
 		"listeners": {
 			"press": start,
 			"move": move,
@@ -182,6 +278,16 @@
 		},
 		"draw": draw,
 		"toggle":toggle,
+		"menu":{
+			"title": 'Shapes',
+			"content": `<div class="tool-extra submenu-rect" id="submenu-rect-Circle">
+							<span class="tool-icon">◯</span>
+						</div>
+						<div class="tool-extra submenu-rect" id="submenu-rect-Ellipse">
+							<span class="tool-icon">` + icons["Ellipse"].icon + `</span>
+						</div>`,
+			"listener": menuListener
+		},
 		"mouseCursor": "crosshair",
 		"stylesheet": "tools/rect/rect.css"
 	});

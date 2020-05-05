@@ -30,6 +30,7 @@
 
 var Tools = {};
 var svgWidth, svgHeight;
+var isTouchDevice = 'ontouchstart' in document.documentElement;
 
 Tools.board = document.getElementById("board");
 Tools.svg = document.getElementById("canvas");
@@ -48,6 +49,7 @@ Tools.pathDataCache = {};
 Tools.eraserCache={};
 Tools.acceptMsgs=true;
 Tools.msgs = [];
+Tools.menus = {};
 
 Tools.menu_width=40;
 Tools.scaleDefaults=[.4,.75,1,1.5,2,4,8];
@@ -116,9 +118,11 @@ Tools.boardName = (function () {
 
 //Turn on the cursor tracking
 
-Tools.svg.addEventListener("mousemove", handleMarker, false);
-Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
-
+if(!isTouchDevice){
+	Tools.svg.addEventListener("mousemove", handleMarker, false);
+}else{
+	Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
+}
 
 var lastPointerUpdate = 0;
 var cursorLastUse={};
@@ -138,6 +142,7 @@ var ptrMessage = {
 };
 
 function handleMarker(evt){
+	//evt.preventDefault();
 	var cur_time = Date.now();
 	if(Tools.showMyPointer && !Tools.suppressPointerMsg && lastPointerUpdate < cur_time - (1000/MAX_CURSOR_UPDATES_PER_SECOND) ){
 		lastPointerUpdate = cur_time;
@@ -296,7 +301,7 @@ Tools.clearBoard = function(deleteMsgs){
 Tools.HTML = {
 	template: new Minitpl("#tools > .tool"),
 	templateExtra: new Minitpl("#tool-list > .tool-extra"),
-	addTool: function (toolName, toolIcon, toolIconHTML, toolShortcut, isExtra, oneTouch) {
+	addTool: function (toolName, toolIcon, toolIconHTML, toolShortcut, isExtra, oneTouch, menu) {
 		var callback;
 		
 		if(oneTouch){
@@ -322,6 +327,83 @@ Tools.HTML = {
 			elem.addEventListener("click", callback);
 			elem.id = "toolID-" + toolName;
 			if(oneTouch) elem.classList.add("oneTouch");
+			if(menu) {
+				Tools.menus[toolName]={};
+				var container = `<div class="popover menu fade show bs-popover-right" 
+					id="popover-` + toolName + `" 
+					x-placement="right" 
+					style="position: fixed; display:none; will-change: transform; top: 0px; left: 0px; transform: translate3d(0px, 0px, 0px);">` +
+						(menu.title?`<h3 class="popover-header">` + menu.title + `</h3>`:``) +
+						`<div class="popover-body">`
+					 		+ menu.content +
+						`</div>
+					</div>`;
+				document.getElementById("template").innerHTML = container;
+				Tools.menus[toolName].menu = document.getElementById("popover-"+toolName);
+				document.body.appendChild(Tools.menus[toolName].menu);
+				
+				 (function(){
+
+					var hidden = true;
+
+					//TOGGLE MENU
+					Tools.menus[toolName].show = function(show) {
+						if(!show){
+								$(Tools.menus[toolName].menu).hide();
+								hidden = true;
+								document.getElementById("menu").removeEventListener(
+									'scroll',
+									handleScroll,
+									false
+								);
+								document.removeEventListener("mousedown", listen, true);
+								document.removeEventListener("touchstart", listen, true);
+							
+						}else{
+							var scrollTop = document.getElementById("menu").scrollTop;
+							Tools.menus[toolName].y = Math.max(10, $(elem).position().top +scrollTop - $(Tools.menus[toolName].menu).height()/2 + 30);
+							Tools.menus[toolName].menu.style.transform = "translate3d(50px,  "+ (-scrollTop + Tools.menus[toolName].y) + "px, 0px)";
+							$(Tools.menus[toolName].menu).show();
+							hidden = false;
+							document.getElementById("menu").addEventListener(
+								'scroll',
+								handleScroll,
+								false
+							);
+							if(!isTouchDevice){
+								document.addEventListener("mousedown", listen , true);
+							}else{
+								document.addEventListener("touchstart", listen , true);
+							}
+						}
+					};
+
+					Tools.menus[toolName].menuOpen = function(){return !hidden};
+
+					//HANDLE SCROLLING
+					var handleScroll = function(){
+						Tools.menus[toolName].menu.style.transform = "translate3d(50px,  "+ (-this.scrollTop + Tools.menus[toolName].y) + "px, 0px)";
+					};
+
+					 // Hide menu
+			 		var listen  = function(e) {
+						 var onButton = true;
+						 var onMenu = true;
+						if (e.target.id != elem.id && !$(elem).find(e.target).length) 
+							onButton = false;
+						if(!(e.target.id && e.target.id == 'popover-'+toolName) && !$('#popover-'+toolName).find(e.target).length)
+							onMenu = false;
+							//console.log(onMenu + ' ' + onButton);
+						if(menu.listener(elem, onButton, onMenu, e)){
+							Tools.menus[toolName].show(false);
+							document.removeEventListener("mousedown", listen , true);
+							document.removeEventListener("touchstart", listen ,true);
+							hidden = true;
+						}
+					};
+				}());
+
+			}
 			if(toolIconHTML){
 				elem.getElementsByClassName("tool-icon")[0].innerHTML = toolIconHTML;
 			}else{
@@ -371,7 +453,8 @@ Tools.add = function (newTool) {
 		newTool.iconHTML, 
 		newTool.shortcut,
 		newTool.isExtra,
-		newTool.oneTouch);
+		newTool.oneTouch,
+		newTool.menu);
 
 	//There may be pending messages for the tool
 	var pending = Tools.pendingMessages[newTool.name];
@@ -676,11 +759,13 @@ Tools.toolHooks = [
 		if (typeof (tool.onquit) !== "function") {
 			tool.onquit = function () { };
 		}
+		if (tool.menu && typeof (tool.menu.listener) !== "function") {
+			tool.menu.listener = function () { };
+		}
 	},
 	function compileListeners(tool) {
 		//compile listeners into compiledListeners
 		var listeners = tool.listeners;
-
 		//A tool may provide precompiled listeners
 		var compiled = tool.compiledListeners || {};
 		tool.compiledListeners = compiled;
@@ -708,21 +793,30 @@ Tools.toolHooks = [
 		}
 
 		if (listeners.press) {
-			compiled["mousedown"] = compile(listeners.press);
-			compiled["touchstart"] = compileTouch(listeners.press);
+			if(!isTouchDevice){
+				compiled["mousedown"] = compile(listeners.press);
+			}else{
+				compiled["touchstart"] = compileTouch(listeners.press);
+			}
 		}
 		if (listeners.move) {
-			compiled["mousemove"] = compile(listeners.move);
-			compiled["touchmove"] = compileTouch(listeners.move);
+			if(!isTouchDevice){
+				compiled["mousemove"] = compile(listeners.move);
+			}else{
+				compiled["touchmove"] = compileTouch(listeners.move);
+			}
 		}
 		if (listeners.release) {
 			var release = compile(listeners.release),
 				releaseTouch = compileTouch(listeners.release);
-			compiled["mouseup"] = release;
-			compiled["mouseleave"] = release;
-			compiled["touchleave"] = releaseTouch;
-			compiled["touchend"] = releaseTouch;
-			compiled["touchcancel"] = releaseTouch;
+			if(!isTouchDevice){
+				compiled["mouseup"] = release;
+				compiled["mouseleave"] = release;
+			}else{
+				compiled["touchleave"] = releaseTouch;
+				compiled["touchend"] = releaseTouch;
+				compiled["touchcancel"] = releaseTouch;
+			}
 		}
 	}
 ];
@@ -763,8 +857,6 @@ Tools.getColor = (function color() {
 	var value = chooser.value = clrs[Math.random() * clrs.length | 0];
 	return function () { return chooser.value; };
 })();
-
-
 
 Tools.setSize = (function size() {
 	var chooser = document.getElementById("chooseSize");
@@ -809,6 +901,29 @@ Tools.i18n = (function i18n() {
 	};
 })();
 
+
+//Scale the canvas on load
+var screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+var screenHeight =  Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+svgWidth = Tools.svg.width.baseVal.value = Math.max(screenWidth + 2000, screenWidth * 2.5);
+svgHeight = Tools.svg.height.baseVal.value =  Math.max(screenHeight + 2000, screenHeight * 2.5);
+
+Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
+
+
+/***********  Polyfills  ***********/
+if (!window.performance || !window.performance.now) {
+	window.performance = {
+		"now": Date.now
+	}
+}
+if (!Math.hypot) {
+	Math.hypot = function (x, y) {
+		//The true Math.hypot accepts any number of parameters
+		return Math.sqrt(x * x + y * y);
+	}
+}
+
 if (typeof Array.isArray === 'undefined') {
 	Array.isArray = function(obj) {
 	  return Object.prototype.toString.call(obj) === '[object Array]';
@@ -833,28 +948,6 @@ function arrayContains(arr, searchFor){
         return false;
     }
     return arr.includes(searchFor);
-}
-
-//Scale the canvas on load
-var screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-var screenHeight =  Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-svgWidth = Tools.svg.width.baseVal.value = Math.max(screenWidth + 2000, screenWidth * 2.5);
-svgHeight = Tools.svg.height.baseVal.value =  Math.max(screenHeight + 2000, screenHeight * 2.5);
-
-Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
-
-
-/***********  Polyfills  ***********/
-if (!window.performance || !window.performance.now) {
-	window.performance = {
-		"now": Date.now
-	}
-}
-if (!Math.hypot) {
-	Math.hypot = function (x, y) {
-		//The true Math.hypot accepts any number of parameters
-		return Math.sqrt(x * x + y * y);
-	}
 }
 
 
