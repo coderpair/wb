@@ -835,16 +835,14 @@ Tools.applyShortcuts = function(shortcuts,toolName){
 			for(var i = 0; i<Tools.shortcuts.actionList.length;i++){
 				var keys = Tools.shortcuts.actionList[i].key.split("-");
 				var key = "";
+				var pass = true;
 				if(keys[0]=="shift"){
-					if(!event.shiftKey){
-						return;
-					}else{
-						key = keys[1];
-					}
+					key = keys[1];
+					pass = event.shiftKey;
 				}else{
 					key = keys[0];
 				}
-				if (e.key === key && !$(e.target).is("textarea,input[type=text]")) {
+				if (pass && e.key === key && !$(e.target).is("textarea,input[type=text]")) {
 					Tools.shortcuts.actionList[i].action();
 				}
 			}

@@ -5,15 +5,16 @@
 
 var xlinkNS = "http://www.w3.org/1999/xlink";
 var imgCount = 1;
+var fileInput;
 function onstart() {
-    const fileInput = document.createElement("input");
+    fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "image/*";
     fileInput.click();
-    fileInput.addEventListener("change", () => {
+    fileInput.addEventListener("change", function(){
         var reader = new FileReader();
         reader.readAsDataURL(fileInput.files[0]);
-
+      
         reader.onload = function (e) {
             var image = new Image();
             image.src = e.target.result;
