@@ -48,7 +48,10 @@
 		// "name": "Hand",
 	"icon": "✋",
         "name": "Hand",
-        //"icon": "",
+		//"icon": "",
+		"shortcuts": {
+            "changeTool":"8"
+        },
 		"listeners": {
 			"press": press,
 			"move": move,

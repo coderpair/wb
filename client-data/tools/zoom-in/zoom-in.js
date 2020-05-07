@@ -44,14 +44,12 @@
         );
     }
 
-    
-
     function setOrigin(x, y, evt, isTouchEvent) {
         origin.scrollX = window.scrollX;
         origin.scrollY = window.scrollY;
         origin.x = x;
         origin.y = y;
-        origin.clientY = getClientY(evt, isTouchEvent);
+        //origin.clientY = getClientY(evt, isTouchEvent);
         origin.scale = Tools.getScale();
     }
 
@@ -72,40 +70,30 @@
         pressed = true;
     }
 
-    Tools.board.addEventListener("wheel", onwheel,{ 'passive': false });
+    //Tools.board.addEventListener("wheel", onwheel,{ 'passive': false });
 
     function release(x, y, evt, isTouchEvent) {
         if (pressed && !moved) {
-	    Tools.scaleIndex=Math.min(Tools.scaleIndex+1,Tools.scaleDefaults.length-1);
+	        Tools.scaleIndex=Math.min(Tools.scaleIndex+1,Tools.scaleDefaults.length-1);
             var scale = Tools.scaleDefaults[Tools.scaleIndex];
             zoom(origin, scale);
-	    setHashScale();	
+	        setHashScale();	
         }
         pressed = false;
     }
 
-    function key(down) {
-        return function (evt) {
-            if (evt.key === "Shift") {
-                Tools.svg.style.cursor = "zoom-" + (down ? "out" : "in");
-            }
-        }
-    }
-
-    function getClientY(evt, isTouchEvent) {
-        return isTouchEvent ? evt.changedTouches[0].clientY : evt.clientY;
-    }
-
-    var keydown = key(true);
-    var keyup = key(false);
-
-    function onstart() {
-        window.addEventListener("keydown", keydown);
-        window.addEventListener("keyup", keyup);
-    }
-    function onquit() {
-        window.removeEventListener("keydown", keydown);
-        window.removeEventListener("keyup", keyup);
+    function keyZoomIn(){
+        var scale = Tools.getScale();
+        //find middle of page
+        var pageX =  window.scrollX + Math.max(document.documentElement.clientWidth, window.innerWidth || 0)/2;
+        var pageY =   window.scrollY + Math.max(document.documentElement.clientHeight, window.innerHeight || 0)/2;
+        var x = pageX / scale;
+        var y = pageY / scale;
+        setOrigin(x, y);
+        Tools.scaleIndex=Math.min(Tools.scaleIndex+1,Tools.scaleDefaults.length-1);
+        scale = Tools.scaleDefaults[Tools.scaleIndex];
+        zoom(origin, scale);
+	    setHashScale();
     }
 
     Tools.add({ //The new tool
@@ -113,12 +101,13 @@
 	"iconHTML":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-plus'></i>",
         "name": "Zoom In",
         //"icon": "",
+        "shortcuts": {
+            "actions":[{"key":"z","action":keyZoomIn}]
+        },
         "listeners": {
             "press": press,
 	    "release": release,
         },
-        "onstart": onstart,
-        "onquit": onquit,
         "mouseCursor": "zoom-in",
 	"isExtra":true
     });

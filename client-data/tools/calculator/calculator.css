@@ -1,6 +1,6 @@
 @media only screen and (max-width: 750px) {
 /* CSS rules here for screens lower than 700px */
-	#calculator {
+	#calc-container {
 		width:80%;
 		height:500px;
 	}
@@ -9,7 +9,7 @@
 @media only screen and (min-width: 750px) {
 /* CSS rules here for screens above 70px */
 
-	#calculator {
+	#calc-container {
 		width:600px;
 		height:450px;
 	}
@@ -18,8 +18,27 @@
 @media only screen and (max-height: 400px) {
 	/* CSS rules here for screens above 70px */
 	
-		#calculator {
+		#calc-container {
 			height:93%;
 		}
 	}
 
+#calc-container {
+	position: absolute;
+	display:none;
+	top:19px;
+	left:65px;
+}
+	  
+#calc-container-header {
+	padding: 10px;
+	cursor: move;
+	opacity:.7;
+	background-color: #2196F3;
+	color: #fff;
+}
+
+#calculator {
+	width:100%;
+	height:100%;
+}

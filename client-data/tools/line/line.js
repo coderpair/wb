@@ -121,6 +121,9 @@
 		line.setAttribute("stroke", lineData.color || "black");
 		line.setAttribute("stroke-width", lineData.size || 10);
 		line.setAttribute("opacity", Math.max(0.1, Math.min(1, lineData.opacity)) || 1);
+		if(lineData.data){
+			line.setAttribute("data-lock",lineData.data);
+		}
 		if(lineData.transform)
 			line.setAttribute("transform",lineData.transform);
 		Tools.group.appendChild(line);
@@ -142,6 +145,9 @@
 			"move": continueLine,
 			"release": stopLine,
 		},
+		"shortcuts": {
+            "changeTool":"2"
+        },
 		"draw": draw,
 		"mouseCursor": "crosshair",
 		"stylesheet": "tools/line/line.css"

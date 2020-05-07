@@ -45,7 +45,6 @@
 	};
 
 	function startErasing(x, y, evt) {
-
 		//Prevent the press from being interpreted by the browser
 		evt.preventDefault();
 		if(curTool=="multi"){
@@ -182,7 +181,8 @@
 						else{
 							var layer;
 							var c = elem.getAttribute("class");
-							if(c && c.startsWith("layer-")){
+							var d = elem.getAttribute("data-lock");
+							if(c && c.startsWith("layer-") && d!=1){
 								layer = parseInt(c.substr(6));
 								if(shouldDelete(x,y,layer))Tools.drawAndSend(msg);
 							}
@@ -250,7 +250,9 @@
 				else{
 					var layer;
 					var c = elem.getAttribute("class");
-					if(c && c.startsWith("layer-")){
+					var d = elem.getAttribute("data-lock");
+
+					if(c && c.startsWith("layer-") && d!=1){
 						layer = parseInt(c.substr(6));
 						if(shouldDelete(x+i,y+j,layer))Tools.drawAndSend(msg);
 						return true
@@ -360,6 +362,9 @@
 			"move": erase,
 			"release": stopErasing,
 		},
+		"shortcuts": {
+            "changeTool":"5"
+        },
 		"draw": draw,
 		"mouseCursor": "crosshair",
 	});

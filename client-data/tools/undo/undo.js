@@ -32,7 +32,7 @@
 	};
 
 	function undo(evt) {
-			evt.preventDefault();
+		if(evt)evt.preventDefault();
 		draw(msg);
 		Tools.send(msg,"Undo");
 	};
@@ -54,7 +54,9 @@
 		"name": "Undo",
 		"icon": "🗑",
 		"iconHTML":"<i style='color: #39CCCC;margin-top:7px' class='fas fa-undo-alt'></i>",
-		//"shortcut": "e",
+		"shortcuts": {
+            "actions":[{"key":"shift-U","action":undo}]
+        },
 		"listeners": {},
 		"draw": draw,
 		"isExtra":true,

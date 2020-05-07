@@ -127,7 +127,7 @@ function handleMsg(board, message, socket) {
 	//Broadcast socket Id when displaying pointer so we know whose pointer it is.
 	//Update and child events will also broadcast pointer location
 	if(config.DISPLAY_POINTERS && (message.type == "c" || 
-			message.type == "update" || message.type == "child")){
+			(message.type == "update" && message.data === undefined) || message.type == "child")){
 				message.socket=socket.id;
 	}
 

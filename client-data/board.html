@@ -34,6 +34,9 @@
 		});
 	</script>
 	<div id="loadingMessage">Loading</div>
+	<div id="shape-lock" class="shape-lock">
+		<i id="shape-lock-icon" class="fas fa-unlock"></i>
+	</div>
 	<div id="compass">
 		<div id="north" class='direction'><i class="fas fa-chevron-up"></i></div>
 		<div id="west" class='direction'><i class="fas fa-chevron-left"></i></div>
@@ -58,7 +61,12 @@
 			
 		</svg>
 	</div>
-	<div id="calculator" style="display:none;position:absolute;top:19px;left:65px;"></div>
+	<div id="calc-container" style="display:none">
+		<div id="calc-container-header">Click here to move<button type="button" class="close" id="close-calc" aria-label="Close"><span aria-hidden="true">×</span></button>
+		</div>
+		<div id="calculator"></div>
+	</div>
+	
 	<div id="menu" class="menu">
 		<div id="menuItems">
 			<ul id="tools" class="tools">

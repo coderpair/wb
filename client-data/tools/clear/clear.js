@@ -33,7 +33,7 @@
 
 	function clearBoard(evt) {
 		if($("#menu").width()>Tools.menu_width+3)return;
-        evt.preventDefault();
+        if(evt)evt.preventDefault();
 		Tools.acceptMsgs = false;
 		draw(msg, true);
 		Tools.send(msg,"Clear");
@@ -55,7 +55,9 @@
 	Tools.add({ //The new tool
 		"name": "Clear",
 		"icon": "🗑",
-		//"shortcut": "e",
+		"shortcuts": {
+            "actions":[{"key":"shift-C","action":clearBoard}]
+        },
 		"listeners": {},
 		"draw": draw,
 		"oneTouch":true,

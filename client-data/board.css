@@ -268,6 +268,20 @@ html, body, svg {
 
 }
 
+#shape-lock {
+	position:fixed;
+	bottom:10px;
+	right:60px;
+	display:none;
+	width:24px;
+	height:24px;
+	color:gray;
+}
+
+#shape-lock.locked {
+	color:red;
+}
+
 
 #compass {
 	position:fixed;

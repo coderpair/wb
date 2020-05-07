@@ -47,7 +47,12 @@
 		y2:0
 	};
 
+	function onStart(){
+		document.getElementById("shape-lock").addEventListener("click", lockShape);
+	};
+
 	function onQuit(){
+		document.getElementById("shape-lock").removeEventListener("click", lockShape);
 		deactivateCurrentShape();
 	};
 
@@ -211,7 +216,6 @@
 
 
 	function draw(data) {
-		Tools.drawingEvent=true;
 		//console.log(JSON.stringify(data));
 		switch (data.type) {
 			//TODO: add the ability to erase only some points in a line
@@ -237,30 +241,39 @@
 						if (!(transforming&&idSelected||elem === null)){ //console.error("Eraser: Tried to delete an element that does not exist.");
 							if (idSelected) deactivateCurrentShape();
 							//console.log(data.transform);
+							Tools.drawingEvent=true;
 							elem.setAttribute("transform", data.updates[i].transform);
 						}
 					}
 				}else{
 					var elem = svg.getElementById(data.id);
-					//check if top layer
-					if(Tools.useLayers){
-						if(elem.getAttribute("class")!="layer"+Tools.layer){
-							elem.setAttribute("class","layer-"+Tools.layer);
-							Tools.group.appendChild(elem);
+					if(data.transform){
+						//check if top layer
+						if(Tools.useLayers){
+							if(elem.getAttribute("class")!="layer"+Tools.layer){
+								elem.setAttribute("class","layer-"+Tools.layer);
+								Tools.group.appendChild(elem);
+							}
 						}
-					}
-					var idSelected = false;
-					if(currShape){
-						if(Array.isArray(currShape)){
-							idSelected = arrayContains(currShape.id,data.id)
-						}else{
-							idSelected = (currShape.id==data.id);
+						var idSelected = false;
+						if(currShape){
+							if(Array.isArray(currShape)){
+								idSelected = arrayContains(currShape.id,data.id)
+							}else{
+								idSelected = (currShape.id==data.id);
+							}
 						}
+						if (transforming&&idSelected||elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
+							if (idSelected) deactivateCurrentShape();
+							//console.log(data.transform);
+							Tools.drawingEvent=true;
+							elem.setAttribute("transform", data.transform);
 					}
-					if (transforming&&idSelected||elem === null) return; //console.error("Eraser: Tried to delete an element that does not exist.");
-						if (idSelected) deactivateCurrentShape();
-						//console.log(data.transform);
-						elem.setAttribute("transform", data.transform);
+					if(data.data !== undefined){
+						if (elem === null) return; //console.error("Tried to update an element that does not exist.");
+						elem.setAttribute("data-lock", data.data);
+						if(lockOpen && currShape.id==data.id)showLock(data.data)
+					}
 				}
 				break;
 			default:
@@ -303,38 +316,80 @@
 			};
 		}else{
 			switch ( target.localName ) {
-				case "circle":  shape = new Transform(target);   break;
-				case "ellipse": shape = new Transform(target);   break;
-				case "text": shape = new Transform(target);   break;
-				case "image":  shape = new Transform(target);   break;
-				case "line":    shape = new Transform(target);   break;
-				case "path":    shape = new Transform(target);   break;
-				case "polygon": shape = new Transform(target);  break;
-				case "rect":    shape = new Transform(target);   break;
+				case "circle":  shape = new Transform(target,null,hideLock);   break;
+				case "ellipse": shape = new Transform(target,null,hideLock);   break;
+				case "text": shape = new Transform(target,null,hideLock);   break;
+				case "image":  shape = new Transform(target,null,hideLock);   break;
+				case "line":    shape = new Transform(target,null,hideLock);   break;
+				case "path":    shape = new Transform(target,null,hideLock);   break;
+				case "polygon": shape = new Transform(target,null,hideLock);  break;
+				case "rect":    shape = new Transform(target,null,hideLock);   break;
 				default:
 					// do nothing for now
 			}
-			if ( shape != null )
+			
+			if ( shape != null ){
 				msgIds=shape.id=target.id;
+			}
 		}
 		if ( shape != null ) {
 			shape.realize();
-
 			shape.callback = continueTransforming;
 			deactivateCurrentShape();
             mouser.registerShape(shape);
             shape.showHandles(true);
             shape.selectHandles(false);
 			currShape = shape;
+			if(!Array.isArray(target)){
+				var locked = target.getAttribute("data-lock");
+				showLock(locked==1);
+			}
 		}
 	};
 
 	deactivateCurrentShape = function(){
 		if(currShape){
+			hideLock();
 			mouser.unregisterShapes();
 			currShape.unrealize();
 			currShape=null;
 		}
+	};
+
+	//Shape locking
+	function lockShape() {
+		var lock = document.getElementById(currShape.id).getAttribute("data-lock");
+		lock = (lock==1?0:1);
+		var msg = {
+			"type": "update",
+			"id": currShape.id,
+			"data":lock,
+			"nostamp":true
+		};
+		showLock(lock);
+		Tools.drawAndSend(msg);
+	};
+
+	var lockOpen = false;
+
+	//Show lock
+	function showLock(locked) {
+		lockOpen = true;
+		var elem = document.getElementById("shape-lock");
+		elem.style.display = "block";
+		if(locked){
+			elem.classList.add("locked");
+			document.getElementById("shape-lock-icon").setAttribute("class","fas fa-lock");
+		}else{
+			elem.classList.remove("locked");
+			document.getElementById("shape-lock-icon").setAttribute("class","fas fa-unlock");
+		}
+	};
+
+	//Hide lock
+	function hideLock() {
+		lockOpen = false;
+		document.getElementById("shape-lock").style.display = "none";
 	};
 	
 	var svg = Tools.svg;
@@ -355,13 +410,16 @@
 		"icon": "?",
 		"iconHTML":icons[0],
 		"toggle":toggle,
-		//"shortcut": "e",
+		"shortcuts": {
+            "changeTool":"6"
+        },
 		"listeners": {
 			"press": start,
 			"move": move,
 			"release": stop,
 		},
 		"draw": draw,
+		"onstart":onStart,
 		"onquit":onQuit,
 		"mouseCursor": "crosshair",
 	});

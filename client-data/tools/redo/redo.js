@@ -32,7 +32,7 @@
 	};
 
 	function redo(evt) {
-        evt.preventDefault();
+        if(evt)evt.preventDefault();
 		draw(msg);
 		Tools.send(msg,"Undo");
 	};
@@ -54,7 +54,9 @@
 		"name": "Redo",
 		"icon": "🗑",
 		"iconHTML":"<i style='color: #3D9970;margin-top:7px' class='fas fa-redo-alt'></i>",
-		//"shortcut": "e",
+		"shortcuts": {
+            "actions":[{"key":"shift-R","action":redo}]
+        },
 		"listeners": {
 			"press": redo
 		},

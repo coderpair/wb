@@ -267,7 +267,7 @@ Shape.prototype.mousedown=function(e){if(!this.locked){if(e.shiftKey){if(this.se
         this.selectHandles(true);
         this.registerHandles();
     }
-    }else{mouser.unregisterShapes();mouser.registerShape(this);this.showHandles(true);this.selectHandles(false);console.log("selecting")}}}};
+    }else{mouser.unregisterShapes();mouser.registerShape(this);this.showHandles(true);this.selectHandles(false);}}}};
 Circle.prototype=new Shape();
 Circle.prototype.constructor=Circle;
 Circle.superclass=Shape.prototype;
@@ -540,9 +540,9 @@ Transform.superclass            = Shape.prototype;
 *   constructor
 *
 *****/
-function Transform(svgNode,rect) {
+function Transform(svgNode,rect,hideLock) {
     if ( arguments.length > 0 ) {
-        this.init(svgNode,rect);
+        this.init(svgNode,rect,hideLock);
     }
 }
 
@@ -552,9 +552,10 @@ function Transform(svgNode,rect) {
 *   init
 *
 *****/
-Transform.prototype.init = function(target,rect) {
+Transform.prototype.init = function(target,rect,hideLock) {
         this.target = target;
         this.id = target.id;
+        this.hideLock = hideLock;
         this.toggleHandles = true;
         this.handlesSelected = false;
         var x,y,w,h,b;
@@ -845,6 +846,8 @@ Transform.prototype.select = function(state){
         var display = ( state ) ? "inline" : "none";
         this.visible = state;
         this.svgNode.setAttributeNS(null, "display", display);
+        if(this.hideLock)
+            this.hideLock();
     };
     Transform.superclass.select.call(this, state);
 }

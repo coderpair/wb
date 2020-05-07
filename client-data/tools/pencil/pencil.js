@@ -215,6 +215,9 @@
 		line.setAttribute("stroke-width", lineData.size || 10);
 		if(Tools.useLayers)
 		line.setAttribute("class","layer-"+Tools.layer);
+		if(lineData.data){
+			line.setAttribute("data-lock",lineData.data);
+		}
 		if(lineData.transform)
 			line.setAttribute("transform",lineData.transform);
 		line.setAttribute("opacity", Math.max(0.1, Math.min(1, lineData.opacity)) || 1);
@@ -253,6 +256,9 @@
 			"move": continueLine,
 			"release": stopLine,
 		},
+		"shortcuts": {
+            "changeTool":"1"
+        },
 		"draw": draw,
 		"toggle":toggle,
 		"onstart":onStart,

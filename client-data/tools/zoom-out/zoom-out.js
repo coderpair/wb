@@ -44,24 +44,21 @@
         );
     }
 
-    
-
     function setOrigin(x, y, evt, isTouchEvent) {
         origin.scrollX = window.scrollX;
         origin.scrollY = window.scrollY;
         origin.x = x;
         origin.y = y;
-        origin.clientY = getClientY(evt, isTouchEvent);
         origin.scale = Tools.getScale();
     }
 
     function setHashScale(){
-	var coords = window.location.hash.slice(1).split(',');
-	var x = coords[0] | 0;
-	var y = coords[1] | 0;
-	var scale = Tools.getScale().toFixed(2);
-	var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + scale;
-	window.history.pushState({}, "", hash);
+        var coords = window.location.hash.slice(1).split(',');
+        var x = coords[0] | 0;
+        var y = coords[1] | 0;
+        var scale = Tools.getScale().toFixed(2);
+        var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + scale;
+        window.history.pushState({}, "", hash);
     }
 
     function press(x, y, evt, isTouchEvent) {
@@ -72,7 +69,7 @@
         pressed = true;
     }
 
-    Tools.board.addEventListener("wheel", onwheel,{ 'passive': false });
+    //Tools.board.addEventListener("wheel", onwheel,{ 'passive': false });
 
     function release(x, y, evt, isTouchEvent) {
         if (pressed && !moved) {
@@ -84,41 +81,33 @@
         pressed = false;
     }
 
-    function key(down) {
-        return function (evt) {
-            if (evt.key === "Shift") {
-                Tools.svg.style.cursor = "zoom-" + (down ? "out" : "in");
-            }
-        }
-    }
+    function keyZoomOut(){
+        var scale = Tools.getScale();
+        //find middle of page
+        var pageX =  window.scrollX + Math.max(document.documentElement.clientWidth, window.innerWidth || 0)/2;
+        var pageY =   window.scrollY + Math.max(document.documentElement.clientHeight, window.innerHeight || 0)/2;
+        var x = pageX / scale;
+        var y = pageY / scale;
+        setOrigin(x, y);
+        Tools.scaleIndex=Math.max(Tools.scaleIndex-1,0);
+            var scale = Tools.scaleDefaults[Tools.scaleIndex];
+            zoom(origin, scale);
+        setHashScale();
+     }
 
-    function getClientY(evt, isTouchEvent) {
-        return isTouchEvent ? evt.changedTouches[0].clientY : evt.clientY;
-    }
-
-    var keydown = key(true);
-    var keyup = key(false);
-
-    function onstart() {
-        window.addEventListener("keydown", keydown);
-        window.addEventListener("keyup", keyup);
-    }
-    function onquit() {
-        window.removeEventListener("keydown", keydown);
-        window.removeEventListener("keyup", keyup);
-    }
 
     Tools.add({ //The new tool
          "icon": "🔎",
 	"iconHTML":"<i style='color: #B10DC9;margin-top:7px' class='fas fa-search-minus'></i>",
         "name": "Zoom Out",
         //"icon": "",
+        "shortcuts": {
+            "actions":[{"key":"shift-Z","action":keyZoomOut}]
+        },
         "listeners": {
             "press": press,
 	    "release": release,
         },
-        "onstart": onstart,
-        "onquit": onquit,
         "mouseCursor": "zoom-out",
 	"isExtra":true
     });

@@ -29,6 +29,7 @@
 
 	var input = document.createElement("input");
 	input.id = "textToolInput";
+	input.type = "text";
 	input.setAttribute("autocomplete", "off");
 
 	var curText = {
@@ -196,6 +197,9 @@
 		elem.setAttribute("fill", fieldData.color);
 		elem.setAttribute("opacity", Math.max(0.1, Math.min(1, fieldData.opacity)) || 1);
 		if (fieldData.txt) elem.textContent = fieldData.txt;
+		if(fieldData.data){
+			elem.setAttribute("data-lock",fieldData.data);
+		}
 		if(fieldData.transform)
 			elem.setAttribute("transform",fieldData.transform);
 		Tools.group.appendChild(elem);
@@ -210,6 +214,9 @@
 		"listeners": {
 			"press": clickHandler
 		},
+		"shortcuts": {
+            "changeTool":"4"
+        },
 		"onstart":onStart,
 		"onquit":onQuit,
 		"draw": draw,

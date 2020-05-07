@@ -35,7 +35,7 @@
 
 	function toggleGrid(evt) {
 		if($("#menu").width()>Tools.menu_width+3)return;
-        	evt.preventDefault();
+        	if(evt)evt.preventDefault();
 		if(toggle){
 			toggle=0;
 		}else{
@@ -66,7 +66,9 @@
 		"name": "Grid",
 		"icon": "🗑",
 		"iconHTML":"<i style='color:gray;margin-top:7px'  class='fas fa-th'></i>",
-		//"shortcut": "e",
+		"shortcuts": {
+            "actions":[{"key":"9","action":toggleGrid}],
+        },
 		"listeners": {},
 		"draw": draw,
 		"oneTouch":true,

@@ -107,11 +107,13 @@ BoardData.prototype.update = function (id, message) {
 
 	var gid = message.gid;
 	var undo = message.undo;
+	var nostamp = message.nostamp || false;
 
 	// get rid of some attributes that we don't want updated.
 	delete message.id;
 	delete message.gid;
 	delete message.undo;
+	delete message.nostamp;
 				
 	delete message.type;
 	delete message.tool;
@@ -185,7 +187,7 @@ BoardData.prototype.update = function (id, message) {
 		}
 		elem.size += diff;
 		this.size += diff;
-		this.stampAndSave(elem,true);
+		this.stampAndSave(elem,!nostamp);
 	}
 
 };

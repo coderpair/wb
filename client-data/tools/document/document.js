@@ -65,7 +65,9 @@ function draw(msg) {
 Tools.add({
     "name": "Document",
     "icon": "🖼️",
-    //"shortcut": "",
+    "shortcuts": {
+        "changeTool":"7"
+    },
     "draw": draw,
     "onstart": onstart,
     "oneTouch":true

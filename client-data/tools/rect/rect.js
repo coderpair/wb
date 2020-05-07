@@ -173,6 +173,9 @@
 		shape.width.baseVal.value = Math.max(1,Math.abs(data['x2'] - data['x']));
 		shape.height.baseVal.value = Math.max(1,Math.abs(data['y2'] - data['y']));
 		shape.setAttribute("fill", "none");
+		if(data.data){
+			shape.setAttribute("data-lock",data.data);
+		}
 		if(data.transform)
 			shape.setAttribute("transform",data.transform);
 	}
@@ -182,6 +185,9 @@
 		shape.cy.baseVal.value = Math.round((data['y2'] + data['y'])/2);
 		shape.r.baseVal.value = Math.max(1,Math.round(Math.sqrt(Math.pow(data['x2'] - data['x'],2)+Math.pow(data['y2'] - data['y'],2))/2));
 		shape.setAttribute("fill", "none");
+		if(data.data){
+			shape.setAttribute("data-lock",data.data);
+		}
 		if(data.transform)
 			shape.setAttribute("transform",data.transform);
 	}
@@ -192,6 +198,9 @@
 		shape.rx.baseVal.value = Math.max(1,Math.abs(Math.round((data['x2'] - data['x'])/2)));
 		shape.ry.baseVal.value = Math.max(1,Math.abs(Math.round((data['y2'] - data['y'])/2)));
 		shape.setAttribute("fill", "none");
+		if(data.data){
+			shape.setAttribute("data-lock",data.data);
+		}
 		if(data.transform)
 			shape.setAttribute("transform",data.transform);
 	}
@@ -278,6 +287,9 @@
 		},
 		"draw": draw,
 		"toggle":toggle,
+		"shortcuts": {
+            "changeTool":"3"
+        },
 		"menu":{
 			"title": 'Shapes',
 			"content": `<div class="tool-extra submenu-rect" id="submenu-rect-Circle">

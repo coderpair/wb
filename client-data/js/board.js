@@ -301,7 +301,7 @@ Tools.clearBoard = function(deleteMsgs){
 Tools.HTML = {
 	template: new Minitpl("#tools > .tool"),
 	templateExtra: new Minitpl("#tool-list > .tool-extra"),
-	addTool: function (toolName, toolIcon, toolIconHTML, toolShortcut, isExtra, oneTouch, menu) {
+	addTool: function (toolName, toolIcon, toolIconHTML, isExtra, oneTouch, menu) {
 		var callback;
 		
 		if(oneTouch){
@@ -312,12 +312,6 @@ Tools.HTML = {
 			callback = function () {
 				Tools.change(toolName);
 			};
-			window.addEventListener("keydown", function (e) {
-				if (e.key === toolShortcut && !e.target.matches("input[type=text], textarea")) {
-					Tools.change(toolName);
-					document.activeElement.blur();
-				}
-			});
 		}
 		var tmp = this.template;
 		if(isExtra){
@@ -447,11 +441,14 @@ Tools.add = function (newTool) {
 		Tools.HTML.addStylesheet(newTool.stylesheet);
 	}
 
+	if(newTool.shortcuts){
+		Tools.applyShortcuts(newTool.shortcuts,newTool.name);
+	}
+
 	//Add the tool to the GUI
 	Tools.HTML.addTool(newTool.name, 
 		newTool.icon, 
 		newTool.iconHTML, 
-		newTool.shortcut,
 		newTool.isExtra,
 		newTool.oneTouch,
 		newTool.menu);
@@ -821,6 +818,49 @@ Tools.toolHooks = [
 	}
 ];
 
+var shortcutsInit = false;
+Tools.applyShortcuts = function(shortcuts,toolName){
+	if(!shortcutsInit){
+		Tools.shortcuts = {
+			changeToolList : [],
+			actionList : []
+		}
+		window.addEventListener("keydown", function (e) {
+			for(var i = 0; i < Tools.shortcuts.changeToolList.length; i++){
+				if (e.key === Tools.shortcuts.changeToolList[i].key && !$(e.target).is("textarea,input[type=text]")) {
+					Tools.change(Tools.shortcuts.changeToolList[i].toolName);
+					document.activeElement.blur();
+				}
+			}
+			for(var i = 0; i<Tools.shortcuts.actionList.length;i++){
+				var keys = Tools.shortcuts.actionList[i].key.split("-");
+				var key = "";
+				if(keys[0]=="shift"){
+					if(!event.shiftKey){
+						return;
+					}else{
+						key = keys[1];
+					}
+				}else{
+					key = keys[0];
+				}
+				if (e.key === key && !$(e.target).is("textarea,input[type=text]")) {
+					Tools.shortcuts.actionList[i].action();
+				}
+			}
+		})
+		
+		shortcutsInit = true;
+	}
+	if(shortcuts.changeTool)
+		Tools.shortcuts.changeToolList.push({"toolName":toolName,"key":shortcuts.changeTool});
+	if(shortcuts.actions){
+		for(var i = 0;i<shortcuts.actions.length;i++){
+			Tools.shortcuts.actionList.push(shortcuts.actions[i]);
+		}
+	}
+};
+
 Tools.applyHooks = function (hooks, object) {
 	//Apply every hooks on the object
 	hooks.forEach(function (hook) {
@@ -962,7 +1002,21 @@ function arrayContains(arr, searchFor){
  	},
  	"draw" : function(data, isLocal){
  		//Print the data on Tools.svg
- 	},
+	 },
+	 "shortcuts": {
+		"changeTool":"c",
+		"actions":[{"key":"z","action":keyZoomIn}]
+	},
+	"menu":{
+		"title": 'Shapes',
+		"content": `<div class="tool-extra submenu-rect" id="submenu-rect-Circle">
+						<span class="tool-icon">◯</span>
+					</div>
+					<div class="tool-extra submenu-rect" id="submenu-rect-Ellipse">
+						<span class="tool-icon">` + icons["Ellipse"].icon + `</span>
+					</div>`,
+		"listener": menuListener
+	},
  	"onstart" : function(oldTool){...},
  	"onquit" : function(newTool){...},
  	"stylesheet" : "style.css",
