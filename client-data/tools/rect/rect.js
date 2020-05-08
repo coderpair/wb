@@ -99,7 +99,8 @@
 		if (evt) evt.preventDefault();
 	}
 
-	function stop(x, y) {
+	function stop(x, y, evt) {
+		evt.preventDefault();
 		//Add a last point to the shape
 		end=true;
 		move(x, y);

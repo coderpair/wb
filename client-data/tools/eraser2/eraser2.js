@@ -90,8 +90,9 @@
 		if (evt) evt.preventDefault();
 	}
 
-	function stopPath(x, y) {
+	function stopPath(x, y, evt) {
 		//Add a last point to the path
+		evt.preventDefault();
 		end=true;
 		continuePath(x, y);
 		end=false;

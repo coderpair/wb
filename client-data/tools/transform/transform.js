@@ -47,7 +47,7 @@
 		y2:0
 	};
 
-	function onStart(){
+	function onStart(evt){
 		document.getElementById("shape-lock").addEventListener("click", lockShape);
 	};
 
@@ -95,14 +95,15 @@
 					lastTime = performance.now();
 				}
 			}
-			if (evt) evt.preventDefault();
 		}
+		if (evt) evt.preventDefault();
 		lastX = x;
 		lastY = y;
 	}
 
-	function stop(x, y) {
+	function stop(x, y, evt) {
 		//Add a last point to the shape
+		evt.preventDefault();
 		if(curTool=="multi"){
 			if(makeRect){
 				end=true;

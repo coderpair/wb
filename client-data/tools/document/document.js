@@ -6,7 +6,8 @@
 var xlinkNS = "http://www.w3.org/1999/xlink";
 var imgCount = 1;
 var fileInput;
-function onstart() {
+function onstart(evt) {
+    if(evt)evt.preventDefault();
     fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "image/*";

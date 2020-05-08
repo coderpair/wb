@@ -212,8 +212,19 @@ function movePointer(message) {
 	cursor.style.opacity = .75;
 	//cursor.style.visibility = "visible"
 	//cursor.style.transform = "translate(" + (message.tx || message.x2 || message.x) + "px, " +  (message.ty || message.y2 || message.y) + "px)";
-	cursor.setAttributeNS(null, "cx", message.tx || message.x2 || message.x);
-	cursor.setAttributeNS(null, "cy", message.ty || message.y2 || message.y);
+	var x,y;
+	if(message.tx !== undefined){
+		x=message.tx;
+		y=message.ty;
+	}else if(message.x2 !== undefined){
+		x=message.x2;
+		y=message.y2;
+	}else{
+		x=message.x;
+		y=message.y;
+	}
+	cursor.setAttributeNS(null, "cx", x);
+	cursor.setAttributeNS(null, "cy", y);
 
 	// Activity monitor
 	if(DISPLAY_ACTIVITY_MONITOR){

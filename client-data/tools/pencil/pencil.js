@@ -92,7 +92,8 @@
 		if (evt) evt.preventDefault();
 	}
 
-	function stopLine(x, y) {
+	function stopLine(x, y, evt) {
+		evt.preventDefault();
 		//Add a last point to the line
 		end=true;
 		continueLine(x, y);

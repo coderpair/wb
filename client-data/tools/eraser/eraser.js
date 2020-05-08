@@ -81,7 +81,8 @@
 
 
 
-	function stopErasing(x, y) {
+	function stopErasing(x, y, evt) {
+		evt.preventDefault();
 		if(curTool=="multi"){
 			//Add a last point to the shape
 			if(makeRect){
@@ -139,6 +140,7 @@
 
 	
 	function erase(x, y, evt) {
+		if (evt) evt.preventDefault();
 		if(curTool=="multi"){
 			if(makeRect){
 				rect['x2'] = x; rect['y2'] = y;
@@ -157,7 +159,6 @@
 					}
 					lastTime = performance.now();
 				}
-				if (evt) evt.preventDefault();
 			}
 		}else{
 			// evt.target should be the element over which the mouse is...

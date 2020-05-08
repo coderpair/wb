@@ -28,6 +28,7 @@ EventHandler.VERSION=1.0;
 function EventHandler(){this.init();};
 EventHandler.prototype.init=function(){};
 EventHandler.prototype.handleEvent=function(e){
+    e.preventDefault();
    // svg.getElementById("info").textContent+=e.type;
     if(e.type.startsWith("touch")){
         if (e.changedTouches.length === 1) {

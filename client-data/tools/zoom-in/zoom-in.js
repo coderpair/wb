@@ -73,6 +73,7 @@
     //Tools.board.addEventListener("wheel", onwheel,{ 'passive': false });
 
     function release(x, y, evt, isTouchEvent) {
+        if (evt) evt.preventDefault();
         if (pressed && !moved) {
 	        Tools.scaleIndex=Math.min(Tools.scaleIndex+1,Tools.scaleDefaults.length-1);
             var scale = Tools.scaleDefaults[Tools.scaleIndex];

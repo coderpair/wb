@@ -46,7 +46,7 @@
 	};
 
 
-	function onStart(){
+	function onStart(evt){
 		curText.oldSize=Tools.getSize();
 		Tools.setSize(curText.rawSize);
 	};

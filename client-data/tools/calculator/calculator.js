@@ -42,8 +42,7 @@
 	//elt.style.height = '400px';
 	//calculator.resize();
 
-	function toggleCalc(evt) {
-		evt.preventDefault();
+	function toggleCalc() {
 		var btn = document.getElementById("toolID-Calculator");
 		if(toggle){
 			container.style.display = "none";
@@ -154,7 +153,8 @@
 			elmnt.style.left = (elmnt.offsetLeft - pos1) + "px";
 		}
 	  
-		function closeDragElement() {
+		function closeDragElement(e) {
+			//e.preventDefault();
 		  /* stop moving when mouse button is released:*/
 		    document.removeEventListener("mouseup",closeDragElement,false);
 			document.removeEventListener("mousemove",elementDrag,false);
