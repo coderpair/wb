@@ -110,31 +110,31 @@ Mouser.prototype.getUserCoordinate=function(node,x,y){var svgRoot=svg;var pan=sv
 Mouser.prototype.getTransformToElement=function(node){var CTM=node.getCTM();while((node=node.parentNode)!=svg){CTM=node.getCTM().multiply(CTM);}return CTM;};
 Mouser.prototype.addEvent=function(type,target,object){
     if (type=="press") {
-        if(!isTouchDevice){
+        //if(!isTouchDevice){
             target.addEventListener("mousedown",object,false);
-        }else{
+       // }else{
             target.addEventListener("touchstart",object,{ 'passive': false });
-        }
+       // }
     }
     if (type=="move") {
-        if(!isTouchDevice){
+       // if(!isTouchDevice){
             target.addEventListener("mousemove",object,false);
-        }else{
+       // }else{
             target.addEventListener("touchmove",object,{ 'passive': false });
-        }
+       // }
     }
     if (type=="click") {
             target.addEventListener("click",object,false);
     }
     if (type=="release") {
-        if(!isTouchDevice){
+       // if(!isTouchDevice){
             target.addEventListener("mouseup",object,false);
             target.addEventListener("mouseleave",object,false);
-        }else{
+       // }else{
             target.addEventListener("touchleave",object,{ 'passive': false });
             target.addEventListener("touchend",object,{ 'passive': false });
             target.addEventListener("touchcancel",object,{ 'passive': false });
-        }
+       // }
     }
 };
 Mouser.prototype.removeEvent=function(type,target,object){

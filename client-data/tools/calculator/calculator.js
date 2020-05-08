@@ -90,18 +90,18 @@
 		var header = document.getElementById(elmnt.id + "-header")
 		if (document.getElementById(header)) {
 		  /* if present, the header is where you move the DIV from:*/
-		  	if(!isTouchDevice){
+		  //	if(!isTouchDevice){
             	header.addEventListener("mousedown",dragMouseDown,false);
-       	 	}else{
+       	 	//}else{
            	 	header.addEventListener("touchstart",dragMouseDown,{ 'passive': false });
-        	}
+        	//}
 		} else {
 			/* otherwise, move the DIV from anywhere inside the DIV:*/
-			if(!isTouchDevice){
+			//if(!isTouchDevice){
 				header.addEventListener("mousedown",dragMouseDown,false);
-			}else{
+			//}else{
 				header.addEventListener("touchstart",dragMouseDown,{ 'passive': false });
-			}
+			//}
 		}
 	  
 		function dragMouseDown(e) {
@@ -120,13 +120,13 @@
 			}
 			
 			// call a function whenever the cursor moves:
-			if(!isTouchDevice){
+			//if(!isTouchDevice){
 				document.addEventListener("mouseup",closeDragElement,false);
 				document.addEventListener("mousemove",elementDrag,false);
-			}else{
+			//}else{
 				document.addEventListener("touchend",closeDragElement,{ 'passive': false });
 				document.addEventListener("touchmove",elementDrag,{ 'passive': false });
-			}
+			//}
 		  
 		}
 	  

@@ -118,11 +118,11 @@ Tools.boardName = (function () {
 
 //Turn on the cursor tracking
 
-if(!isTouchDevice){
+//if(!isTouchDevice){
 	Tools.svg.addEventListener("mousemove", handleMarker, false);
-}else{
+//}else{
 	Tools.svg.addEventListener("touchmove", handleMarker,{ 'passive': false });
-}
+//}
 
 var lastPointerUpdate = 0;
 var cursorLastUse={};
@@ -364,11 +364,11 @@ Tools.HTML = {
 								handleScroll,
 								false
 							);
-							if(!isTouchDevice){
+							//if(!isTouchDevice){
 								document.addEventListener("mousedown", listen , true);
-							}else{
+							//}else{
 								document.addEventListener("touchstart", listen , true);
-							}
+							//}
 						}
 					};
 
@@ -790,30 +790,30 @@ Tools.toolHooks = [
 		}
 
 		if (listeners.press) {
-			if(!isTouchDevice){
+			//if(!isTouchDevice){
 				compiled["mousedown"] = compile(listeners.press);
-			}else{
+			//}else{
 				compiled["touchstart"] = compileTouch(listeners.press);
-			}
+			//}
 		}
 		if (listeners.move) {
-			if(!isTouchDevice){
+			//if(!isTouchDevice){
 				compiled["mousemove"] = compile(listeners.move);
-			}else{
+			//}else{
 				compiled["touchmove"] = compileTouch(listeners.move);
-			}
+			//}
 		}
 		if (listeners.release) {
 			var release = compile(listeners.release),
 				releaseTouch = compileTouch(listeners.release);
-			if(!isTouchDevice){
+			//if(!isTouchDevice){
 				compiled["mouseup"] = release;
 				compiled["mouseleave"] = release;
-			}else{
+			//}else{
 				compiled["touchleave"] = releaseTouch;
 				compiled["touchend"] = releaseTouch;
 				compiled["touchcancel"] = releaseTouch;
-			}
+			//}
 		}
 	}
 ];
