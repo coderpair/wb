@@ -1,4 +1,4 @@
-(function documents() { //Code isolation
+﻿(function documents() { //Code isolation
 
 
 // This isn't an HTML5 canvas, it's an old svg hack, (the code is _that_ old!)
@@ -6,8 +6,7 @@
 var xlinkNS = "http://www.w3.org/1999/xlink";
 var imgCount = 1;
 var fileInput;
-function onstart(evt) {
-    if(evt)evt.preventDefault();
+function onstart() {
     fileInput = document.createElement("input");
     fileInput.type = "file";
     fileInput.accept = "image/*";
