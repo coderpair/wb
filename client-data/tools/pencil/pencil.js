@@ -65,7 +65,8 @@
 
 	function startLine(x, y, evt) {
 		//Prevent the press from being interpreted by the browser
-		//evt.preventDefault();
+		evt.preventDefault();
+
 		Tools.suppressPointerMsg = true;
 		curLineId = Tools.generateUID("l"); //"l" for line
 

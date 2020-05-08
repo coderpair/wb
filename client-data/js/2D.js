@@ -76,9 +76,36 @@ Mouser.prototype.unregisterAll=function(){for(var i=0;i<this.handles.length;i++)
 Mouser.prototype.unregisterShapes=function(){for(var i=0;i<this.shapes.length;i++){var shape=this.shapes[i];shape.select(false);shape.selectHandles(false);shape.showHandles(false);shape.unregisterHandles();}this.shapes=new Array();};
 Mouser.prototype.handleIndex=function(handle){var result=-1;for(var i=0;i<this.handles.length;i++){if(this.handles[i]===handle){result=i;break;}}return result;};
 Mouser.prototype.shapeIndex=function(shape){var result=-1;for(var i=0;i<this.shapes.length;i++){if(this.shapes[i]===shape){result=i;break;}}return result;};
-Mouser.prototype.beginDrag=function(e,x,y){this.currentNode=e.target;var svgPoint=this.getUserCoordinate(this.currentNode,x,y);this.lastPoint=new Point2D(svgPoint.x,svgPoint.y);mouser.addEvent("release",this.svgNode,this);mouser.addEvent("move",this.svgNode,this);svg.appendChild(this.svgNode);this.svgNode.setAttributeNS(null,"display","inline");};
-Mouser.prototype.mouseup=function(){this.lastPoint=null;this.currentNode=null;mouser.removeEvent("release",this.svgNode,this);mouser.removeEvent("move",this.svgNode,this);this.svgNode.setAttributeNS(null,"display","none");};
-Mouser.prototype.mousemove=function(e,x,y){var svgPoint=this.getUserCoordinate(this.currentNode,x,y);var newPoint=new Point2D(svgPoint.x,svgPoint.y);var delta=newPoint.subtract(this.lastPoint);var updates=new Array();var updateId=new Date().getTime();this.lastPoint.setFromPoint(newPoint);for(var i=0;i<this.handles.length;i++){var handle=this.handles[i];var owner=handle.owner;handle.translate(delta);if(owner!=null){if(owner.lastUpdate!=updateId){owner.lastUpdate=updateId;updates.push(owner);}}else{updates.push(handle);}}for(var i=0;i<updates.length;i++){updates[i].update();}};
+Mouser.prototype.beginDrag=function(e,x,y){
+    this.currentNode=e.target;
+    var svgPoint=this.getUserCoordinate(this.currentNode,x,y);
+    this.lastPoint=new Point2D(svgPoint.x,svgPoint.y);
+    mouser.addEvent("release",this.svgNode,this);
+    mouser.addEvent("move",this.svgNode,this);
+    svg.appendChild(this.svgNode);
+    this.svgNode.setAttributeNS(null,"display","inline");
+};
+Mouser.prototype.mouseup=function(){
+    this.lastPoint=null;
+    this.currentNode=null;
+    mouser.removeEvent("release",this.svgNode,this);
+    mouser.removeEvent("move",this.svgNode,this);
+    this.svgNode.setAttributeNS(null,"display","none");
+    for(var i=0;i<this.shapes.length;i++){
+        var shape=this.shapes[i];
+        if(shape.mouseup)shape.mouseup();
+    }
+
+};
+Mouser.prototype.mousemove=function(e,x,y){
+    var svgPoint=this.getUserCoordinate(this.currentNode,x,y);
+    var newPoint=new Point2D(svgPoint.x,svgPoint.y);
+    var delta=newPoint.subtract(this.lastPoint);
+    var updates=new Array();var updateId=new Date().getTime();
+    this.lastPoint.setFromPoint(newPoint);
+    for(var i=0;i<this.handles.length;i++){
+        var handle=this.handles[i];var owner=handle.owner;
+        handle.translate(delta);if(owner!=null){if(owner.lastUpdate!=updateId){owner.lastUpdate=updateId;updates.push(owner);}}else{updates.push(handle);}}for(var i=0;i<updates.length;i++){updates[i].update();}};
 Mouser.prototype.getUserCoordinate=function(node,x,y){var svgRoot=svg;var pan=svgRoot.currentTranslate;var zoom=svgRoot.currentScale;var CTM=this.getTransformToElement(node);var iCTM=CTM.inverse();var worldPoint=svg.createSVGPoint();worldPoint.x=(x-pan.x)/zoom;worldPoint.y=(y-pan.y)/zoom;return worldPoint.matrixTransform(iCTM);};
 Mouser.prototype.getTransformToElement=function(node){var CTM=node.getCTM();while((node=node.parentNode)!=svg){CTM=node.getCTM().multiply(CTM);}return CTM;};
 Mouser.prototype.addEvent=function(type,target,object){
@@ -95,6 +122,9 @@ Mouser.prototype.addEvent=function(type,target,object){
         }else{
             target.addEventListener("touchmove",object,{ 'passive': false });
         }
+    }
+    if (type=="click") {
+            target.addEventListener("click",object,false);
     }
     if (type=="release") {
         if(!isTouchDevice){
@@ -253,21 +283,54 @@ Shape.prototype.registerHandles=function(){};
 Shape.prototype.unregisterHandles=function(){};
 Shape.prototype.selectHandles=function(select){};
 Shape.prototype.showHandles=function(state){};
-Shape.prototype.mousedown=function(e){if(!this.locked){if(e.shiftKey){if(this.selected){mouser.unregisterShape(this);}else{mouser.registerShape(this);this.showHandles(true);this.selectHandles(true);this.registerHandles();}}else{if(this.selected){
-    if(this.toggleHandles){
+Shape.prototype.mouseup=function(){
+    if(!this.lockSelection&&!this.dragged){
         if(this.handlesSelected){
             this.selectHandles(false);
             this.handlesSelected = false;
-        }else{
-            this.selectHandles(true);
-            this.handlesSelected = true;
         }
-        this.registerHandles();
-    }else{
-        this.selectHandles(true);
-        this.registerHandles();
     }
-    }else{mouser.unregisterShapes();mouser.registerShape(this);this.showHandles(true);this.selectHandles(false);}}}};
+    this.lockSelection = false;
+    this.dragged = false;
+};
+Shape.prototype.mouseleave=function(e){};
+Shape.prototype.mousedown=function(e,x,y){
+    if(!this.locked){
+        if(e.shiftKey){
+            if(this.selected){
+                mouser.unregisterShape(this);
+            }else{
+                mouser.registerShape(this);
+                this.showHandles(true);
+                this.selectHandles(true);
+                this.registerHandles();
+            }
+        }else{
+            if(this.selected){
+                if(this.toggleHandles){
+                    if(this.handlesSelected){
+                        //this.selectHandles(false);
+                        //this.handlesSelected = false;
+                    }else{
+                        this.selectHandles(true);
+                        this.handlesSelected = true;
+                        this.lockSelection=true;
+                    }
+                    mouser.beginDrag(e,x,y)
+                    this.registerHandles();
+                }else{
+                    this.selectHandles(true);
+                    this.registerHandles();
+                }
+            }else{
+                mouser.unregisterShapes();
+                mouser.registerShape(this);
+                this.showHandles(true);
+                this.selectHandles(false);
+            }
+        }
+    }
+};
 Circle.prototype=new Shape();
 Circle.prototype.constructor=Circle;
 Circle.superclass=Shape.prototype;
@@ -310,18 +373,26 @@ Handle.prototype.refresh=function(){this.svgNode.setAttributeNS(null,"x",this.po
 Handle.prototype.select=function(state){Handle.superclass.select.call(this,state);if(state){this.svgNode.setAttributeNS(null,"fill","black");}else{this.svgNode.setAttributeNS(null,"fill","white");}};
 Handle.prototype.mousedown=function(e,x,y){
     //svg.getElementById("info").textContent+=3;
-    if(!this.locked){if(e.shiftKey){
-        if(this.selected){
-           // svg.getElementById("info").textContent+=2;
-            mouser.unregister(this);}
-            else{mouser.register(this);
-                mouser.beginDrag(e,x,y);}}else{
-                    //svg.getElementById("info").textContent+1;
-                    if(!this.selected){
-                        var owner=this.owner;
-                        mouser.unregisterAll();
-                        mouser.register(this);}
-                        mouser.beginDrag(e,x,y);}}};
+    if(!this.locked){
+        if(e.shiftKey){
+            if(this.selected){
+            // svg.getElementById("info").textContent+=2;
+                mouser.unregister(this);
+            }else{
+                mouser.register(this);
+                    mouser.beginDrag(e,x,y);
+            }
+        }else{
+            //svg.getElementById("info").textContent+1;
+            if(!this.selected){
+                var owner=this.owner;
+                mouser.unregisterAll();
+                mouser.register(this);
+            }
+            mouser.beginDrag(e,x,y);
+        }
+    }
+};
 Lever.prototype=new Shape();
 Lever.prototype.constructor=Lever;
 Lever.superclass=Shape.prototype;
@@ -556,8 +627,13 @@ Transform.prototype.init = function(target,rect,hideLock) {
         this.target = target;
         this.id = target.id;
         this.hideLock = hideLock;
+
+        //flags
         this.toggleHandles = true;
         this.handlesSelected = false;
+        this.lockSelection=false;
+        this.dragged=false;
+
         var x,y,w,h,b;
         if(Array.isArray(target)){
             this.m=[];
@@ -649,8 +725,9 @@ Transform.prototype.realize = function() {
             this.handles[i].realize();
             this.handles[i].show(false);
         }
-
         mouser.addEvent("press",this.svgNode,this);
+        //mouser.addEvent("click",this.svgNode,this);
+        //mouser.addEvent("move",this.svgNode,this);
     }
 };
 
@@ -659,6 +736,8 @@ Transform.prototype.unrealize=function(){
         this.handles[i].unrealize();
     }
         mouser.removeEvent("press",this.svgNode,this);
+        //mouser.removeEvent("click",this.svgNode,this);
+        //mouser.removeEvent("move",this.svgNode,this);
         if(this.svgNode.parentNode)
             this.svgNode.parentNode.removeChild(this.svgNode);
     };
@@ -670,6 +749,7 @@ Transform.prototype.unrealize=function(){
 *
 *****/
 Transform.prototype.refresh = function() {
+    this.dragged = true;
     var points = new Array();
     if(this.handles[0].selected&&this.handles[1].selected){
         var delta    = this.handles[3].point.subtract(this.points[2]);

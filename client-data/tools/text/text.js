@@ -220,8 +220,8 @@
 		"onstart":onStart,
 		"onquit":onQuit,
 		"draw": draw,
-		"stylesheet": "tools/text/text.css",
-		"mouseCursor": "text"
+		"mouseCursor": "text",
+		"stylesheet": "tools/text/text.css"
 	});
 
 })(); //End of code isolation

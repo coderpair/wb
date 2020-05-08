@@ -2,10 +2,12 @@ html, body, svg {
 	padding:0;
 	margin:0;
 	font-family: Liberation sans, sans-serif;
+	
 }
 
 #canvas {
 	transform-origin: 0 0;
+	
 }
 
 #loadingMessage {
@@ -347,27 +349,4 @@ line-height:30x;
 	background: transparent;
 }
 
-@canvas line {
-	fill: none;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-}
-
-#canvas path {
-	fill: none;
-	stroke-linecap: round;
-	stroke-linejoin: round;
-}
-
-#canvas rect {
-	//fill: none;
-}
-
-
-
-#canvas text {
-	font-family:"Arial", "Helvetica", sans-serif;
-	user-select:none;
-	-moz-user-select:none;
-}
 

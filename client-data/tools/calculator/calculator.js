@@ -87,7 +87,7 @@
 	function dragElement(elmnt) {
 
 		var pos1 = 0, pos2 = 0, pos3 = 0, pos4 = 0;
-		var header = document.getElementById(elmnt.id + "=header")
+		var header = document.getElementById(elmnt.id + "-header")
 		if (document.getElementById(header)) {
 		  /* if present, the header is where you move the DIV from:*/
 		  	if(!isTouchDevice){
@@ -98,9 +98,9 @@
 		} else {
 			/* otherwise, move the DIV from anywhere inside the DIV:*/
 			if(!isTouchDevice){
-				elmnt.addEventListener("mousedown",dragMouseDown,false);
+				header.addEventListener("mousedown",dragMouseDown,false);
 			}else{
-				elmnt.addEventListener("touchstart",dragMouseDown,{ 'passive': false });
+				header.addEventListener("touchstart",dragMouseDown,{ 'passive': false });
 			}
 		}
 	  
