@@ -11,7 +11,7 @@ A demonstration server is available at [lcfprep.com/wb2/wb.html](https://lcfprep
 
 The WB whiteboard:
 
-<img width="881" alt="Screen Shot 2020-04-15 at 12 50 19 AM" src="https://user-images.githubusercontent.com/8367977/81508237-e06afd80-92b7-11ea-9773-25550a75fd0e.png">
+<img width="861" alt="Screen Shot 2020-04-15 at 12 50 19 AM" src="https://user-images.githubusercontent.com/8367977/81508360-83bc1280-92b8-11ea-86c0-c30a408e7ee3.png">
 
 Some drawings from the original board:
 <table>
