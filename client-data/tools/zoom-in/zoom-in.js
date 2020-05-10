@@ -54,12 +54,12 @@
     }
 
     function setHashScale(){
-	var coords = window.location.hash.slice(1).split(',');
-	var x = coords[0] | 0;
-	var y = coords[1] | 0;
-	var scale = Tools.getScale().toFixed(2);
-	var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + scale;
-	window.history.pushState({}, "", hash);
+        var coords = window.location.hash.slice(1).split(',');
+        var x = coords[0] | 0;
+        var y = coords[1] | 0;
+        var scale = Tools.getScale().toFixed(2);
+        var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + scale;
+        window.history.pushState({}, "", hash);
     }
 
     function press(x, y, evt, isTouchEvent) {
@@ -83,7 +83,10 @@
         pressed = false;
     }
 
+    Tools.zoomComplete = true;
+
     function keyZoomIn(){
+        if(!Tools.zoomComplete)return
         var scale = Tools.getScale();
         //find middle of page
         var pageX =  window.scrollX + Math.max(document.documentElement.clientWidth, window.innerWidth || 0)/2;
@@ -103,7 +106,7 @@
         "name": "Zoom In",
         //"icon": "",
         "shortcuts": {
-            "actions":[{"key":"z","action":keyZoomIn}]
+            "actions":[{"key":"x","action":keyZoomIn}]
         },
         "listeners": {
             "press": press,

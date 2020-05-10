@@ -734,15 +734,16 @@ var scaleTimeout = null;
 Tools.setScale = function setScale(scale) {
 	if (isNaN(scale)) scale = 1;
 	scale = Math.max(0.4, Math.min(10, scale));
-	Tools.svg.style.willChange = 'transform';
+	//Tools.svg.willChange = 'width, height';
 	//Tools.svg.style.transform = 'scale(' + scale + ')';
 	//svg.setAttributeNS(null, "width", svgWidth * percent);
 	//svg.setAttributeNS(null, "height", svgHeight * percent);
 	
-	
-        Tools.svg.width.baseVal.value = svgWidth*scale;// Tools.svg.width.baseVal.value/scale;
+    Tools.svg.width.baseVal.value = svgWidth*scale;// Tools.svg.width.baseVal.value/scale;
 	Tools.svg.height.baseVal.value = svgHeight*scale;//Tools.svg.height.baseVal.value/scale;
-	Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
+	//Tools.svg.style.width = svgWidth*scale;// Tools.svg.width.baseVal.value/scale;
+	//Tools.svg.style.height = svgHeight*scale;
+	//Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
 	clearTimeout(scaleTimeout);
 	scaleTimeout = setTimeout(function () {
 		Tools.svg.style.willChange = 'auto';
@@ -951,14 +952,34 @@ Tools.i18n = (function i18n() {
 })();
 
 
-//Scale the canvas on load
-var screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
-var screenHeight =  Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
-svgWidth = Tools.svg.width.baseVal.value = Math.max(screenWidth + 2000, screenWidth * 2.5);
-svgHeight = Tools.svg.height.baseVal.value =  Math.max(screenHeight + 2000, screenHeight * 2.5);
 
-Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
 
+function resize_view(){
+	//Scale the canvas on load
+	var screenWidth = Math.max(document.documentElement.clientWidth, window.innerWidth || 0);
+	var screenHeight =  Math.max(document.documentElement.clientHeight, window.innerHeight || 0);
+	svgWidth = Tools.svg.width.baseVal.value = Math.max(screenWidth + 2000, screenWidth * 2.5);
+	svgHeight = Tools.svg.height.baseVal.value =  Math.max(screenHeight + 2000, screenHeight * 2.5);
+	Tools.svg.setAttributeNS(null, "viewBox", "0 0 " + svgWidth + " " + svgHeight);
+}
+
+$(document).ready(function(){
+	$(window).resize(function(){
+	resize_view();
+	var scale = Tools.getScale().toFixed(2);
+	Tools.setScale(scale);
+	var coords = window.location.hash.slice(1).split(',');
+	var x = coords[0] | 0;
+	var y = coords[1] | 0;
+	
+	var hash = '#' + (x | 0) + ',' + (y | 0) + ',' + scale;
+	window.history.pushState({}, "", hash);
+	
+		
+	 
+	});
+});
+resize_view();
 
 /***********  Polyfills  ***********/
 if (!window.performance || !window.performance.now) {

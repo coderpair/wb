@@ -44,6 +44,14 @@
         );
     }
 
+    var animation = null;
+    function animate(scale) {
+        cancelAnimationFrame(animation);
+        animation = requestAnimationFrame(function () {
+            zoom(origin, scale);
+        });
+    }
+
     function setOrigin(x, y, evt, isTouchEvent) {
         origin.scrollX = window.scrollX;
         origin.scrollY = window.scrollY;
@@ -82,7 +90,77 @@
         pressed = false;
     }
 
-    function keyZoomOut(){
+    var timer;
+    var curscale;
+    var inc = 0;
+    var inc2 = 0;
+    var zoomScale = Tools.scaleDefaults[0];
+
+    function animate_out() {
+        inc+=10;
+        var size = curscale - (curscale-zoomScale)/(60)*inc;
+        animate(size);
+        if(inc!=60){
+            setTimeout(animate_out, 20);
+        }else{
+            inc = 0;
+            setHashScale();
+        }
+    };
+
+    function animate_in(){
+        inc2+=10;
+        var size = zoomScale - (zoomScale-curscale)/(60)*inc2;
+        animate(size);
+        if(inc2!=60){
+            setTimeout(animate_in, 20);
+        }else{
+            inc2 = 0;
+            setHashScale();
+            Tools.zoomComplete = true;
+        }
+    };
+
+    function homeIn(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        clearTimeout(timer);
+        var x,y;
+        var scale = Tools.getScale();
+
+        if(e.type.startsWith("touch")){
+            if (e.changedTouches.length === 1) {
+                x = touch.pageX/scale;
+                y = touch.pageY/scale;
+            }
+        }else if(e.type.startsWith("mouse")){
+                x = e.pageX/scale
+                y = e.pageY/scale
+        }
+        setOrigin(x, y);
+        timer = setTimeout(animate_in, 20);
+        Tools.svg.removeEventListener('mousedown',homeIn, true);
+        Tools.svg.removeEventListener('touchstart',homeIn, false);
+    };
+
+    function wideout(){
+        if(!Tools.zoomComplete)return;
+        Tools.zoomComplete = false;
+        var scale = Tools.getScale();
+        //find middle of page
+        var pageX =  window.scrollX + Math.max(document.documentElement.clientWidth, window.innerWidth || 0)/2;
+        var pageY =   window.scrollY + Math.max(document.documentElement.clientHeight, window.innerHeight || 0)/2;
+        var x = pageX / scale;
+        var y = pageY / scale;
+        setOrigin(x, y);
+        curscale = Tools.scaleDefaults[Tools.scaleIndex];
+        timer = setTimeout(animate_out, 20);
+        Tools.svg.addEventListener('mousedown',homeIn,true);
+        Tools.svg.addEventListener('touchstart',homeIn,false);
+     }
+
+     function keyZoomOut(){
+        if(!Tools.zoomComplete)return;
         var scale = Tools.getScale();
         //find middle of page
         var pageX =  window.scrollX + Math.max(document.documentElement.clientWidth, window.innerWidth || 0)/2;
@@ -91,8 +169,8 @@
         var y = pageY / scale;
         setOrigin(x, y);
         Tools.scaleIndex=Math.max(Tools.scaleIndex-1,0);
-            var scale = Tools.scaleDefaults[Tools.scaleIndex];
-            zoom(origin, scale);
+        var scale = Tools.scaleDefaults[Tools.scaleIndex];
+        zoom(origin, scale);
         setHashScale();
      }
 
@@ -103,7 +181,7 @@
         "name": "Zoom Out",
         //"icon": "",
         "shortcuts": {
-            "actions":[{"key":"shift-Z","action":keyZoomOut}]
+            "actions":[{"key":"z","action":wideout},{"key":"shift-X","action":keyZoomOut}]
         },
         "listeners": {
             "press": press,
