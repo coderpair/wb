@@ -111,7 +111,11 @@ Tools.connect();
 
 
 Tools.boardName = (function () {
-	var path = window.location.pathname.split("/");
+	var path = window.location.search.split("?board=");
+	if(path.length!=1){
+		return path[1];
+	}
+	path = window.location.pathname.split("/");
 	return path[path.length - 1];
 })();
 
