@@ -43,7 +43,7 @@ First [install node.js](https://nodejs.org/en/download/) (v8.0 or superior)
 npm install wb-rdbeach
 ```
 
-Finally, you can start the server:
+Finally, you can start the server. Go to the wb-rdbeach directory and type:
 
 ```
 PORT=8080 npm start
@@ -56,7 +56,7 @@ Open the browser on your local machine and type:
 ```
 http://localhost:8080
 ```
-To access the board.
+To access the index page.
 
 
 If you want to run on a different port, you will need to change the PORT=8080 in the line above, and modify this line in /client-data/js/board.js:
