@@ -40,7 +40,7 @@ var fileserver = serveStatic(config.WEBROOT, {
 	maxAge: 2 * 3600 * 1000,
 	setHeaders: function (res) {
 		res.setHeader("X-UA-Compatible", "IE=Edge");
-		res.setHeader("Content-Security-Policy", CSP);
+		//res.setHeader("Content-Security-Policy", CSP);
 	}
 });
 
