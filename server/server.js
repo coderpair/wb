@@ -9,11 +9,15 @@ var  sockets = require('./sockets.js')
 	, templating = require("./templating.js")
 	, config = require("./configuration.js");
 
-var https = {
+var https;
+
+if(config.HTTPS){
+	https = {
 		key : fs.readFileSync(path.join(__dirname, config.PRIVATE_KEY_PATH)),
 		cert : fs.readFileSync(path.join(__dirname, config.CERTIFICATE_PATH)),
 		ca : fs.readFileSync(path.join(__dirname, config.CA_BUNDLE_PATH))
-	};
+	}
+};
 
 var app =(config.HTTPS ? require('https').createServer(https,handler) : require('http').createServer(handler));
 
