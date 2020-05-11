@@ -67,6 +67,23 @@ this.socket = io.connect(':8080', {
 
 By default, the application runs its own web server and socket server at the root directory, listening to port 8080. If you want to incorporate the whiteboard in an existing site, simply move the client-data directory to a subfolder of your site and point your browser toward the index.html or board.html file located within this directory.
 
+
+If you want to run the board from an https site. You will need to update the following paths in /server/configuration.js
+
+```
+    PRIVATE_KEY_PATH:  "../../../../ssl/private.key",
+
+    CERTIFICATE_PATH: "../../../../ssl/certificate.crt",
+
+    CA_BUNDLE_PATH: "../../../../ssl/ca_bundle.crt",
+```
+
+And start the server with:
+
+```
+PORT=8080 HTTPS=true npm start
+```
+
 ## Troubleshooting
 
 If you experience an issue or want to propose a new feature in WB, please [open a github issue](https://github.com/rdbeach/wb/issues/new).
