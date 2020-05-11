@@ -36,8 +36,8 @@ If you have your own web server, and want to run a private instance of WB on it,
 
 
 
-Then [install node.js](https://nodejs.org/en/download/) (v8.0 or superior)
- if you don't have it already, then install WBO's dependencies:
+First [install node.js](https://nodejs.org/en/download/) (v8.0 or superior)
+ if you don't have it already, then install WB:
 
 ```
 npm install wb-rdbeach
