@@ -32,35 +32,40 @@ Some drawings from the original board:
 
 If you have your own web server, and want to run a private instance of WB on it, you can. It should be very easy to get it running on your own server.
 
-### Running the code
+### Running the code using NPM
 
-First, download the source and go to the wb dir:
-```
-git clone git@github.com:rdbeach/wb.git
-cd wb
-```
 
-Then [install node.js](https://nodejs.org/en/download/) (v10.0 or superior)
+
+Then [install node.js](https://nodejs.org/en/download/) (v8.0 or superior)
  if you don't have it already, then install WBO's dependencies:
 
 ```
-npm install
+npm install wb-rdbeach
 ```
 
 Finally, you can start the server:
+
 ```
 PORT=8080 npm start
 ```
 
 This will run WB directly on your machine, on port 8080, without any isolation from the other services.
 
-IF you want to run on a different port, you will need to change the line above, and modify this line in /client-data/js/board.js:
+Open the browser on your local machine and type:
+
+```
+http://localhost:8080
+```
+To access the board.
+
+
+If you want to run on a different port, you will need to change the PORT=8080 in the line above, and modify this line in /client-data/js/board.js:
 
 ```
 this.socket = io.connect(':8080', {
 ```
 
-Finally, add the client-data to your site and point your browser toward board.html.
+By default, the application runs its own web server and socket server at the root directory, listening to port 8080. If you want to incorporate the whiteboard in an existing site, simply move the client-data directory to a subfolder of your site and point your browser toward the index.html or board.html file located within this directory.
 
 ## Troubleshooting
 
