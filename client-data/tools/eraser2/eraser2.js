@@ -65,7 +65,7 @@
 
 		//Prevent the press from being interpreted by the browser
 		evt.preventDefault();
-
+		Tools.suppressPointerMsg = true;
 		erase=true;
 		
 		
@@ -98,6 +98,7 @@
 		end=false;
 		erase=false;
 		curPathId = "";
+		Tools.suppressPointerMsg = false;
 	}
 
 	function newLayer(){
