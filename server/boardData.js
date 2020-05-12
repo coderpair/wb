@@ -84,8 +84,13 @@ BoardData.prototype.addChild = function (parentId, child) {
 	parent.size += size;
 	this.size += size;
 	var data = parent.data
-	if (Array.isArray(data._children)) data._children.push(child);
-	else data._children = [child];
+	if(data.type=="line"){
+		if (Array.isArray(data.pts)) data.pts.push([child.x,child.y]);
+		else data.pts = [[child.x,child.y]];
+	}else{
+		if (Array.isArray(data._children)) data._children.push(child);
+		else data._children = [child];
+	}
 	this.stampAndSave(parent,(data.type != "erase"));
 };
 
@@ -532,20 +537,28 @@ BoardData.prototype.isValid = function isValid(data,type,key, value) {
 		//TODO validate data based on Template
 	}
 	//For now...
-	if(type=="data"||type=="child"){
-		if(type=="child"){
-			var item = this.elements[data.parent];
-			if (item.hasOwnProperty("_children")) {
-				if (!Array.isArray(item._children)) item._children = [];
-				if (item._children.length > config.MAX_CHILDREN) item._children.length = config.MAX_CHILDREN;
-			}
-		}
+	if(type=="data"){
 		var size =  memorySizeOf(data);
 		if(this.size + size > config.MAX_BOARD_BYTES){
 			return 0;
 		}else{
 			return size;
 		}
+	}else if(type=="child"){
+		var item = this.elements[data.parent];
+		if (item.hasOwnProperty("_children")) {
+			if (!Array.isArray(item._children)) item._children = [];
+			if (item._children.length > config.MAX_CHILDREN) return 0;
+		}
+		if (item.hasOwnProperty("pts")) {
+			if (item.pts.length > config.MAX_CHILDREN) return 0;
+		}
+		if(item.type=="line"){
+			return memorySizeOf([data.x,data.y]);
+		}else{
+			return memorySizeOf(data);
+		}
+		
 	}else{
 		return memorySizeOf(value);
 	}

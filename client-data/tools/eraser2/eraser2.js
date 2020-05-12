@@ -65,6 +65,7 @@
 
 		//Prevent the press from being interpreted by the browser
 		evt.preventDefault();
+
 		Tools.suppressPointerMsg = true;
 		erase=true;
 		
@@ -141,6 +142,10 @@
 				newLayer()
 				Tools.eraserCache[data.id]={layer:Tools.layer-1,size:data.size,pts:[]};
 				renderPaths[data.id]=createPath(data);
+				if(data.pts){
+					var pts = getPoints(renderPaths[data.id], data.pts);
+					if(pts)renderPaths[data.id].setPathData(pts);
+				}
 				break;
 			case "child":
 				
@@ -148,8 +153,7 @@
 					console.error("Erase: Hmmm... I received a point of a path that has not been created (%s).", data.parent);
 					return false;
 				}
-				var pts;
-				pts=getPoints(renderPaths[data.parent], data.parent, data.x, data.y);
+				var pts = getPoints(renderPaths[data.parent], [[data.x, data.y]], true);
 				if(pts)renderPaths[data.parent].setPathData(pts);
 				break;
 			default:
@@ -175,32 +179,49 @@
 	}
 
 	var svg = Tools.svg;
-	function getPoints(line, id, x, y) {
-		var pts = getPathData(line), //The points that are already in the line as a PathData
-		
-			nbr = pts.length; //The number of points already in the line
-		switch (nbr) {
-			case 0: //The first point in the line
-				//If there is no point, we have to start the line with a moveTo statement
-				npoint = { type: "M", values: [x, y] };
-				break;
-			case 1: //There is only one point.
-				//Draw a curve that is segment between the old point and the new one
-				npoint = {
-					type: "L", values: [
-						x, y
-					]
-				};
-				break;
-			default: //There are at least two points in the line
+	function getPoints(line, npts, single) {
+		var pts = getPathData(line); //The points that are already in the line as a PathData
+		for(var i = 0; i  < npts.length; i++){
+			var npoint;
+			var x = npts[i][0];
+			var y = npts[i][1];
+			var nbr = pts.length; //The number of points already in the line
+			switch (nbr) {
+				case 0: //The first point in the line
+					//If there is no point, we have to start the line with a moveTo statement
+					npoint = { type: "M", values: [x, y] };
+					break;
+				case 1: //There is only one point.
+					//Draw a curve that is segment between the old point and the new one
+					npoint = {
+						type: "L", values: [
+							x, y
+						]
+					};
+					break;
+				default: //There are at least two points in the line
+					var prev_values = pts[nbr - 1].values; // Previous point
+					var ante_values = pts[nbr - 2].values; // Point before the previous one
+					var prev_x = prev_values[prev_values.length - 2];
+					var prev_y = prev_values[prev_values.length - 1];
+					var ante_x = ante_values[ante_values.length - 2];
+					var ante_y = ante_values[ante_values.length - 1];
 
-				npoint = {
-					type: "L", values: [
-						x, y
-					]
-				};
+
+					//We don't want to add the same point twice consecutively
+					if (!((prev_x == x && prev_y == y)
+						|| (ante_x == x && ante_y == y))){
+						npoint = {
+							type: "L", values: [
+								x, y
+							]
+						};
+					}else{
+						if(single)return false;
+					}
+			}
+			if(npoint)pts.push(npoint);
 		}
-		pts.push(npoint);
 		return pts;
 	}
 

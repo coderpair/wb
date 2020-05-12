@@ -48,6 +48,7 @@ Tools.drawingEvent = true;
 Tools.pathDataCache = {};
 Tools.eraserCache={};
 Tools.acceptMsgs=true;
+
 Tools.msgs = [];
 Tools.menus = {};
 
@@ -85,7 +86,8 @@ Tools.connect = function() {
     window.setTimeout( 'Tools.connect()', 20 );
   } );
   this.socket.on("broadcast", function (msg) {
-	handleMessage(msg).then(function () {
+	handleMessage(msg)
+	.then(function () {
 		if(msg.type=='sync' && Tools.acceptMsgs){
 			if(Tools.msgs.length>msg.msgCount){
 				var msgs =Tools.msgs.slice(msg.msgCount);
@@ -604,9 +606,10 @@ function batchCall(fn, args) {
 		var batch = args.slice(0, BATCH_SIZE);
 		var rest = args.slice(BATCH_SIZE);
 		return Promise.all(batch.map(fn))
-			.then(function () {
-				return new Promise(requestAnimationFrame);
-			}).then(batchCall.bind(null, fn, rest));
+			//.then(function () {
+			//	return new Promise(requestAnimationFrame);
+			//})
+			.then(batchCall.bind(null, fn, rest));
 	}
 }
 
