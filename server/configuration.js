@@ -38,6 +38,9 @@ module.exports = {
     /** Max number of sub-items in an item. This prevents flooding */
     MAX_CHILDREN: parseInt(process.env['MAX_CHILDREN']) || 12800,
 
+    /** Max number of items for batch processing of messages*/
+    BATCH_SIZE: parseInt(process.env['BATCH_SIZE']) || 1024,
+
     /** Maximum value for any x or y on the board */
     MAX_BOARD_SIZE: parseInt(process.env['MAX_BOARD_SIZE']) || 65536,
 

@@ -441,16 +441,20 @@ BoardData.prototype.get = function (id, children) {
  * @param {BoardData~processData} callback - Function to be called with each piece of data read
  */
 BoardData.prototype.getAll = function (id) {
-	var results = [];
+	var batches = [];
 	var elems = this.elements;
 	var ids = Object.keys(elems);
 	var sorted = this.sortIds(ids);
-	for (var i = 0; i < sorted.length; i++){
-
-		results.push(elems[sorted[i]].data);
-	
+	while(sorted.length !== 0){
+		var results = [];
+		var batch = sorted.slice(0, config.BATCH_SIZE);
+		sorted = sorted.slice(config.BATCH_SIZE);
+		for (var i = 0; i < batch.length; i++){
+			results.push(elems[batch[i]].data);
+		}
+		batches.push(results)
 	}
-	return results;
+	return batches;
 };
 
 /** Adds a user

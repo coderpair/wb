@@ -58,7 +58,11 @@ function socketConnection(socket) {
 	socket.on("getboard", noFail(function onGetBoard(name) {
 		joinBoard(name).then(board => {
 			//Send all the board's data as soon as it's loaded
-			socket.emit("broadcast", { _children: board.getAll() });
+			var batches = board.getAll();
+			socket.emit("broadcast", { _children: (batches[0] || []),_more:(batches.length>1)});
+			for(var i = 1; i < batches.length; i++){
+				socket.emit("broadcast", { _children: batches[i],_more:(i!=batches.length-1) });
+			}
 		});
 	}));
 
@@ -154,7 +158,11 @@ function handleMsg(board, message, socket) {
 		if(success){
 			var sockets = getConnectedSockets();
 			sockets.forEach(function(s,i) {
-				s.emit('broadcast', {type:'sync', id: socket.id, _children: board.getAll(),msgCount:board.getMsgCount(s.id)});
+				var batches = board.getAll();
+				s.emit('broadcast', {type:'sync', id: socket.id, _children: (batches[0] || []),_more:(batches.length>1),msgCount:board.getMsgCount(s.id)});
+				for(var i = 1; i < batches.length; i++){
+					s.emit("broadcast", { _children: batches[i], subtype: 'sync', _more:(i!=batches.length-1),msgCount:board.getMsgCount(s.id)});
+				}
 			});
 		}else if(message.type == "clear"){
 			socket.emit("broadcast", {type: 'sync', id: socket.id,msgCount:board.getMsgCount(socket.id)});

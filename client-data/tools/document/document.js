@@ -26,7 +26,7 @@ function onstart() {
             var msg = {
                 id: uid,
                 type:"doc",
-                data: image.src,
+                src: image.src,
                 w: this.width || 300,
                 h: this.height || 300,
                 x: (100+document.documentElement.scrollLeft)/Tools.scale+10*imgCount,
@@ -52,7 +52,7 @@ function draw(msg) {
     var img = Tools.createSVGElement("image");
     img.id=msg.id;
     img.setAttribute("class", "layer-"+Tools.layer);
-    img.setAttributeNS(xlinkNS, "href", msg.data);
+    img.setAttributeNS(xlinkNS, "href", msg.src);
     img.x.baseVal.value = msg['x'];
     img.y.baseVal.value = msg['y'];
     img.setAttribute("width", 400*aspect);

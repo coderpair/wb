@@ -1,4 +1,4 @@
-/**
+﻿/**
  *                        WHITEBOPHIR
  *********************************************************
  * @licstart  The following is the entire license notice for the 
@@ -48,6 +48,7 @@ Tools.drawingEvent = true;
 Tools.pathDataCache = {};
 Tools.eraserCache={};
 Tools.acceptMsgs=true;
+Tools.more=false;
 
 Tools.msgs = [];
 Tools.menus = {};
@@ -59,8 +60,10 @@ Tools.color = "red";
 Tools.showOtherPointers = true;
 Tools.showMyPointer = true;
 Tools.suppressPointerMsg = false;
+
 const MAX_CURSOR_UPDATES_PER_SECOND = 20;
 const DISPLAY_ACTIVITY_MONITOR = true;
+var loading = true;
 
 Tools.socket = null,
 Tools.connect = function() {
@@ -70,37 +73,45 @@ Tools.connect = function() {
     delete self.socket;
     self.socket = null;
   }
+
   this.socket = io.connect(':8080', {
 	"reconnection" : true,
 	"reconnectionDelay": 100, //Make the xhr connections as fast as possible
 	"timeout": 1000 * 60 * 20 // Timeout after 20 minutes
   });
+
   this.socket.on( 'connect', function () {
     console.log( 'connected to server' );
 	Tools.clearBoard(true);
 	//Get the board as soon as the page is loaded
 	Tools.socket.emit("getboard", Tools.boardName);
   } );
+
   this.socket.on( 'disconnect', function () {
     //console.log( 'disconnected from server' );
     window.setTimeout( 'Tools.connect()', 20 );
   } );
-  this.socket.on("broadcast", function (msg) {
-	handleMessage(msg)
-	.then(function () {
-		if(msg.type=='sync' && Tools.acceptMsgs){
-			if(Tools.msgs.length>msg.msgCount){
-				var msgs =Tools.msgs.slice(msg.msgCount);
-				console.log("out of sync: " + JSON.stringify(msgs));
-				handleMessage({_children: msgs});
-			}
-		}
 
-	}).finally(function afterload() {
+  this.socket.on("broadcast", function (msg) {
+
+	handleMessage(msg);
+	
+	if((msg.type=='sync' || msg.subtype=='sync') && Tools.acceptMsgs && !Tools.more){
+		if(Tools.msgs.length>msg.msgCount){
+			var msgs =Tools.msgs.slice(msg.msgCount);
+			console.log("out of sync: " + JSON.stringify(msgs));
+			handleMessage({_children: msgs});
+		}
+	}
+
+	if(loading){
 		var loadingEl = document.getElementById("loadingMessage");
 		loadingEl.classList.add("hidden");
-	});
+		loading=false;
+	}
+	
   });
+
   this.socket.on("reconnect", function onReconnection() {
 	Tools.clearBoard(true);
 	Tools.socket.emit("getboard", Tools.boardName);
@@ -599,17 +610,8 @@ function messageForTool(message) {
 
 // Apply the function to all arguments by batches
 function batchCall(fn, args) {
-	var BATCH_SIZE = 1024;
-	if (args.length === 0) {
-		return Promise.resolve();
-	} else {
-		var batch = args.slice(0, BATCH_SIZE);
-		var rest = args.slice(BATCH_SIZE);
-		return Promise.all(batch.map(fn))
-			//.then(function () {
-			//	return new Promise(requestAnimationFrame);
-			//})
-			.then(batchCall.bind(null, fn, rest));
+	for(var i = 0; i<args.length;i++){
+		handleMessage(args[i]);
 	}
 }
 
@@ -617,6 +619,7 @@ function batchCall(fn, args) {
 function handleMessage(message) {
 	//Check if the message is in the expected format
 	if(!message)return;
+	//console.log(message);
 	//TODO: Right now if you are sending the socket id it is to identify the cursor
 	//and move it. CHange later
 	if((message.type == "c" || message.socket) && Tools.showOtherPointers){
@@ -627,8 +630,16 @@ function handleMessage(message) {
 		if (Tools.acceptMsgs)Tools.clearBoard(false);
 	}
 	if (message.tool && Tools.acceptMsgs) messageForTool(message);
-	if (message._children && Tools.acceptMsgs) return batchCall(handleMessage, message._children);
-	else return Promise.resolve();
+	if (message._children && Tools.acceptMsgs){
+		if(message._more){
+			Tools.more = true;
+			document.getElementById("overlay").style.display = "block";
+		}else{
+			Tools.more = false;
+			document.getElementById("overlay").style.display = "none";
+		}
+		batchCall(handleMessage, message._children);
+	}
 }
 /*
 //Receive draw instructions from the server
