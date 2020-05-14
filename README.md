@@ -27,6 +27,11 @@ Some drawings from the original board:
    <td> drawing art
    <td> <img alt="angel drawn on WBO" width="300" src="https://user-images.githubusercontent.com/552629/59914139-08404100-941a-11e9-9c29-bd2569fe4730.png"/>
 </table>
+    
+    
+## User Guide ##
+
+![Wb Layout New](https://user-images.githubusercontent.com/8367977/81897735-16380c80-956c-11ea-8eff-356fdb3a410d.png)
 
 ## Running your own instance of WB
 
