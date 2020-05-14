@@ -51,7 +51,7 @@ The desmos calculator activates within its own moveable floating window. The sta
 
 ### Element locking ###
 
-To lock an element. Select the single element transform and click on the element. At the bottom right of the screen, you will see a small lock. Click on the lock to "lock" the element. Unlock in the same manner. Once locked, the element cannot be deleted by the pink skull eraser. It may, however, be deleted by the black scull eraser. This is useful with images/documents that you want to write on top of and subsequently erase those markings.
+To lock an element, select the single element transform and click on the element. At the bottom right of the screen, you will see a small lock. Click on the lock to "lock" the element. Unlock in the same manner. Once locked, the element cannot be deleted by the pink skull eraser. It may, however, be deleted by the black scull eraser. This is useful with images/documents that you want to write on top of and subsequently erase those markings.
 
 ### Keyboard Shortcuts ###
 
@@ -70,7 +70,7 @@ Zoom out is "shift X"
 The "z" key will zoom you all the way out and wait for the user to click on the screen. When you click a particular area of the screen, you will be automatically zoomed in to that region, with the same magnification level you started with.
 
 
-
+Of course, you can reconfigure the shortcuts to your liking. And, you can opt to have only subset of the tools listed.
 
 ## Running your own instance of WB
 
