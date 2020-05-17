@@ -27,6 +27,50 @@ Some drawings from the original board:
    <td> drawing art
    <td> <img alt="angel drawn on WBO" width="300" src="https://user-images.githubusercontent.com/552629/59914139-08404100-941a-11e9-9c29-bd2569fe4730.png"/>
 </table>
+    
+    
+## User Guide ##
+
+![Wb Layout New](https://user-images.githubusercontent.com/8367977/81897735-16380c80-956c-11ea-8eff-356fdb3a410d.png)
+
+### Removal tools ###
+
+The pink skull eraser erases one drawing element at a time. Simply click on the element to delete it. 
+
+The black skull eraser erases multiple elements at once. Click and drag across a rectangular area to erase all drawing elements within that area. The black eraser will only erase elements which are fully contained within the rectangle.
+
+The masking eraser, located in the additional tools slider, may be used to make slight corrections to a drawing. It should not be used to erase large areas of the board.
+
+### Transform tool ###
+
+The transform tool allows you to move, rotate, and resize objects. The first variant is the single element transform. Click on an element to activate the transfom handles for that element. The second variant is the multiple element transform. Click and drag accross a rectangular area to select elements within that area. Only elements fully contained within the area will be selected. You may then transform those elements as a group.
+
+### Desmos Calculator Plugin ###
+
+The desmos calculator activates within its own moveable floating window. The state of the calculator is shared among all participants.
+
+### Element locking ###
+
+To lock an element, select the single element transform and click on the element. At the bottom right of the screen, you will see a small lock. Click on the lock to "lock" the element. Unlock in the same manner. Once locked, the element cannot be deleted by the pink skull eraser. It may, however, be deleted by the black scull eraser. This is useful with images/documents that you want to write on top of and subsequently erase those markings.
+
+### Keyboard Shortcuts ###
+
+The first nine buttons, top to bottom, have keyboard shortcuts 1-9, So, for instance, the pencil tool is 1, the line tool is 2, etc.
+
+Clear is "shift C".
+
+Undo is "shift U"
+
+Redo is "shift R"
+
+Zoom in is "x".
+
+Zoom out is "shift X"
+
+The "z" key will zoom you all the way out and wait for the user to click on the screen. When you click a particular area of the screen, you will be automatically zoomed in to that region, with the same magnification level you started with.
+
+
+Of course, you can reconfigure the shortcuts to your liking. And, you can opt to have only subset of the tools listed.
 
 ## Running your own instance of WB
 
