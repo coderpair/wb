@@ -29,6 +29,8 @@
  //TODO config file
 
 var Tools = {};
+var wb_comp = {};
+
 var svgWidth, svgHeight;
 var isTouchDevice = 'ontouchstart' in document.documentElement;
 
@@ -161,6 +163,13 @@ var ptrMessage = {
 function handleMarker(evt){
 	//evt.preventDefault();
 	var cur_time = Date.now();
+	if(wb_comp.list["Measurement"]&&!Tools.suppressPointerMsg){
+		wb_comp.list["Measurement"].update(
+			{type:"pointer",
+			x:evt.pageX / Tools.getScale(),
+			y:evt.pageY / Tools.getScale()
+			})
+	}
 	if(Tools.showMyPointer && !Tools.suppressPointerMsg && lastPointerUpdate < cur_time - (1000/MAX_CURSOR_UPDATES_PER_SECOND) ){
 		lastPointerUpdate = cur_time;
 		ptrMessage.data.x = evt.pageX / Tools.getScale(),
@@ -229,7 +238,7 @@ function movePointer(message) {
 	cursor.style.opacity = .75;
 	//cursor.style.visibility = "visible"
 	//cursor.style.transform = "translate(" + (message.tx || message.x2 || message.x) + "px, " +  (message.ty || message.y2 || message.y) + "px)";
-	var x,y;
+	var x=0,y=0;
 	if(message.tx !== undefined){
 		x=message.tx;
 		y=message.ty;
@@ -383,7 +392,7 @@ Tools.HTML = {
 							
 						}else{
 							var scrollTop = document.getElementById("menu").scrollTop;
-							Tools.menus[toolName].y = Math.max(10, $(elem).position().top +scrollTop - $(Tools.menus[toolName].menu).height()/2 + 30);
+							Tools.menus[toolName].y = Math.max(10, $(elem).position().top +scrollTop -  ($(Tools.menus[toolName].menu).height()>60?10:-9));
 							Tools.menus[toolName].menu.style.transform = "translate3d(50px,  "+ (-scrollTop + Tools.menus[toolName].y) + "px, 0px)";
 							$(Tools.menus[toolName].menu).show();
 							hidden = false;
@@ -450,6 +459,24 @@ Tools.HTML = {
 		document.head.appendChild(link);
 	}
 };
+
+wb_comp.list = {};
+
+wb_comp.add = function (newComp) {
+	if (newComp.name in wb_comp.list) {
+		console.log("wb_comp add: The component '" + newComp.name + "' is already" +
+			"in the list. Updating it...");
+	}
+
+	//Add the tool to the list
+	wb_comp.list[newComp.name] = newComp;
+
+	if (newComp.stylesheet) {
+		Tools.HTML.addStylesheet(newComp.stylesheet);
+	}
+	if(newComp.onstart)newComp.onstart();
+
+}
 
 Tools.list = {}; // An array of all known tools. {"toolName" : {toolObject}}
 

@@ -28,6 +28,8 @@
 	//Indicates the id of the line the user is currently drawing or an empty string while the user is not drawing
 	var curLineId = "",
 		end = false,
+		startX,
+		startY,
 		lastTime = performance.now(); //The time at which the last point was drawn
 
 	//The data of the message that will be sent for every update
@@ -44,7 +46,8 @@
 		evt.preventDefault();
 		Tools.suppressPointerMsg = true;
 		curLineId = Tools.generateUID("s"); //"s" for straight line
-
+		startX= x;
+		startY=y;
 		Tools.drawAndSend({
 			'type': 'straight',
 			'id': curLineId,
@@ -60,12 +63,36 @@
 		/*Wait 70ms before adding any point to the currently drawing line.
 		This allows the animation to be smother*/
 		if (curLineId !== "") {
+			if (anglelock) {
+				var alpha = Math.atan2(y - startY, x - startX);
+				var d = Math.hypot(y - startY, x - startX);
+				var increment = 2 * Math.PI / 12;
+				var r = alpha / increment;
+				r = ((Math.abs(Math.abs(r%3)-1.5))<.25?
+					Math.floor(r)+.5
+					:
+					Math.round(r)
+					);
+				alpha = r * increment;
+				x = startX + d * Math.cos(alpha);
+				y = startY + d * Math.sin(alpha);
+			}
 			if (performance.now() - lastTime > 70 || end) {
 				Tools.drawAndSend(new UpdateMessage(x, y));
 				lastTime = performance.now();
+				if(wb_comp.list["Measurement"]){
+					wb_comp.list["Measurement"].update(
+						{type:"line",
+						x:x,
+						y:y,
+						x2:startX,
+						y2:startY}
+					)
+				}
 			} else {
 				draw(new UpdateMessage(x, y));
 			}
+			
 		}
 		if (evt) evt.preventDefault();
 	}
@@ -136,10 +163,49 @@
 		line.y2.baseVal.value = data['y2'];
 	}
 
+	function toggle(elem){
+		if(Tools.menus["Line"].menuOpen()){
+			Tools.menus["Line"].show(false);
+		}else{
+			Tools.menus["Line"].show(true);
+		}
+		if(!menuInitialized)initMenu();
+	};
+
+	var menuInitialized = false;
+	var anglelock = false;
+
+	function initMenu(){
+		var elem = document.getElementById("angle-lock");
+		elem.addEventListener("click",anglelockClicked);
+		menuInitialized = true;
+	};
+   
+	function anglelockClicked(){
+		var elem = document.getElementById("angle-lock");
+		if(anglelock){
+			elem.style.color = "gray";
+			anglelock = false;
+			elem.setAttribute("class","fas fa-unlock");
+		}else{
+			elem.setAttribute("class","fas fa-lock");
+			elem.style.color = "orange";
+			anglelock = true;
+		}
+	};
+
+	function menuListener(elem, onButton, onMenu, e) {
+		if(!onMenu&&!onButton){
+			e.stopPropagation();
+			return true;
+		}
+		return false;
+	};
+
 	Tools.add({ //The new tool
 		// "name": "Straight line",
 		 "icon": "☇",
-        "name": "Straight line",
+        "name": "Line",
         //"icon": "",
 		"listeners": {
 			"press": startLine,
@@ -148,7 +214,15 @@
 		},
 		"shortcuts": {
             "changeTool":"2"
-        },
+		},
+		"toggle":toggle,
+		"menu":{
+			"title": 'Lines',
+			"content": `<div style="width:143px;" class="tool-extra submenu-line"  id="submenu-rect-angleLock">
+							<div id="submenu-line-extend" style="padding:5px;font-size:.8rem;color: gray"><i style="font-size:1rem;margin-left:5px" id="angle-lock" class="fas fa-unlock"></i> &nbsp;0-30-45-60-90°</div>
+						</div>`,
+			"listener": menuListener
+		},
 		"draw": draw,
 		"mouseCursor": "crosshair",
 		"stylesheet": "tools/line/line.css"

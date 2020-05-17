@@ -28,7 +28,9 @@
 
 	//Indicates the id of the line the user is currently drawing or an empty string while the user is not drawing
 	var curLineId = "",
-	     	penIcons = ["✏","W"],
+		startX=0,
+		startY=0,
+		penIcons = ["✏","W"],
 		lastTime = performance.now(), //The time at which the last point was drawn
 		end=false;
 	var curPen = {
@@ -77,7 +79,8 @@
 			'size': Tools.getSize(),
 			'opacity': Tools.getOpacity()
 		});
-
+		startX=x;
+		startY=y;
 		//Immediatly add a point to the line
 		continueLine(x, y);
 	}
@@ -88,6 +91,16 @@
 		if (curLineId !== "" && (performance.now() - lastTime > 20 || end)) {
 			Tools.drawAndSend(new PointMessage(x, y));
 			lastTime = performance.now();
+			if(wb_comp.list["Measurement"]){
+				wb_comp.list["Measurement"].update(
+					{type:"Path",
+					x:startX,
+					y:startY,
+					x2:x,
+					y2:y,
+					}
+				)
+			}
 		}
 		if (evt) evt.preventDefault();
 	}

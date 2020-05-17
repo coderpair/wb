@@ -35,6 +35,11 @@
 	</script>
 	<div id="loadingMessage">Loading</div>
 	<div id="overlay"></div>
+	<div style='display:none' id="msr-pod-up"><i class="fas fa-angle-double-up"></i></div>
+	<div style='display:none' id="msr-dialog" class="msr-dialog">
+		<div id="msr-pod"><span id="msr-header">Geometry</span><i style="float:right;color:gray;margin:5px 10px 0px 0px" class="fas fa-angle-double-down"></i></div>
+		<div id="msr-main"><br>Ready</div>
+	</div>
 	<div id="shape-lock" class="shape-lock">
 		<i id="shape-lock-icon" class="fas fa-unlock"></i>
 	</div>
@@ -145,7 +150,8 @@
 	<script src="tools/undo/undo.js"></script>
 	<script src="tools/redo/redo.js"></script>
 	<script src="tools/zoom-in/zoom-in.js"></script>
-    	<script src="tools/zoom-out/zoom-out.js"></script>
+	<script src="tools/zoom-out/zoom-out.js"></script>
+	<script src="components/measurement/measurement.js"></script>
 	<script src="js/canvascolor/canvascolor.min.js"></script>
 
 </body>

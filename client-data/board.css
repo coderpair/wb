@@ -286,8 +286,8 @@ html, body, svg {
 
 #shape-lock {
 	position:fixed;
-	bottom:10px;
-	right:60px;
+	bottom:60px;
+	right:15px;
 	display:none;
 	width:24px;
 	height:24px;
@@ -302,7 +302,7 @@ html, body, svg {
 #compass {
 	position:fixed;
 	bottom:10px;
-	right:10px;
+	right:3px;
 	display:none;
 	width:52px;
 	height:40px;

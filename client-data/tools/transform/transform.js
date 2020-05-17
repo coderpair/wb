@@ -52,6 +52,9 @@
 	};
 
 	function onQuit(){
+		if(wb_comp.list["Measurement"]){
+			wb_comp.list["Measurement"].resize("small")
+		}
 		document.getElementById("shape-lock").removeEventListener("click", lockShape);
 		deactivateCurrentShape();
 	};
@@ -205,9 +208,16 @@
 					for(var i = 0; i<shape.matrix.length;i++){
 						msg.updates[i]={transform:shape.matrix[i]};
 					}
+					if(wb_comp.list["Measurement"]){
+						wb_comp.list["Measurement"].updateTransform(shape)
+					}
 				}else{
 					msg.transform=shape.matrix;
+					if(wb_comp.list["Measurement"]){
+						wb_comp.list["Measurement"].updateTransform()
+					}
 				}
+				
 				Tools.drawAndSend(msg);
 			}
 			lastTime = performance.now();
@@ -315,6 +325,13 @@
 				msgIds.push(target[i].id);
 				shape.id.push(target[i].id);
 			};
+			if(wb_comp.list["Measurement"]){
+				wb_comp.list["Measurement"].init(
+					"group",
+					null,
+					shape
+				)
+			}
 		}else{
 			switch ( target.localName ) {
 				case "circle":  shape = new Transform(target,null,hideLock);   break;
@@ -331,6 +348,12 @@
 			
 			if ( shape != null ){
 				msgIds=shape.id=target.id;
+				if(wb_comp.list["Measurement"]){
+					wb_comp.list["Measurement"].init(
+						target.localName,
+						target
+					)
+				}
 			}
 		}
 		if ( shape != null ) {

@@ -94,6 +94,16 @@
 			if (performance.now() - lastTime > 70 || end) {
 				Tools.drawAndSend(curUpdate);
 				lastTime = performance.now();
+			
+				if(wb_comp.list["Measurement"]){
+					wb_comp.list["Measurement"].update(
+						{type:curshape,
+						x:lastX,
+						y:lastY,
+						x2:x,
+						y2:y}
+					)
+				}
 			}
 		}
 		if (evt) evt.preventDefault();
@@ -259,6 +269,11 @@
 			btns[i].style.color = "gray";
 			btns[i].style.borderRadius = "8px";
 		}
+		/*if(shape=="Ellipse"){
+			var extender = document.getElementById("submenu-rect-extend")
+			extender.style.display = 'block';
+			$(extender).animate({width:250,height:200});
+		}*/
 		var btn = document.getElementById("submenu-rect-" + shape);
 		if(icons[btn.id.substr(13)].isSVG){
 			btn.getElementsByClassName("tool-icon")[0].innerHTML = icons[btn.id.substr(13)].menuIconActive;
@@ -298,7 +313,7 @@
 						</div>
 						<div class="tool-extra submenu-rect" id="submenu-rect-Ellipse">
 							<span class="tool-icon">` + icons["Ellipse"].icon + `</span>
-						</div>`,
+						</div><div id="submenu-rect-extend" style="display:none;width:50px;height:20px"><div>`,
 			"listener": menuListener
 		},
 		"mouseCursor": "crosshair",

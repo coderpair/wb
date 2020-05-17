@@ -1,0 +1,85 @@
+#msr-dialog {
+	-webkit-transition: width 0.25s ease;
+    -moz-transition: width 0.24s ease;
+    -o-transition: width 0.25s ease;
+    transition: width 0.25s ease;
+	position:fixed;
+	display:none;
+	bottom:10px;
+	right:65px;
+	height:36px;
+	color:gray;
+	background-color:white;
+	border:1px solid #dddddd;
+	border-radius:5px;
+	box-shadow: 0 0 3px #7FB2CC;
+}
+
+#msr-pod-up {
+	position:fixed;
+	display:block;
+	width:16px;
+	height:24px;
+	bottom:10px;
+	right:70px;
+	margin-bottom:5px;
+	color:gray;
+}
+
+#msr-dialog #msr-pod {
+	position:absolute;
+	width:100%;
+	height:36px;
+	left:0px;
+	top:0px;
+	background-color:#f7f7f7;
+	color:#212529;
+	font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,"Noto Sans",sans-serif,"Apple Color Emoji","Segoe UI Emoji","Segoe UI Symbol","Noto Color Emoji";
+	font-size:16px;
+	border-top-left-radius: calc(.3rem - 1px);
+    border-top-right-radius: calc(.3rem - 1px);
+	border-bottom:1px solid #ebebeb;
+	padding: .28rem 0rem  .5rem  .6rem;
+}
+
+#msr-header {
+	
+	font-weight:500;
+}
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+#msr-main::-webkit-scrollbar {
+    display: none;
+}
+
+#msr-dialog #msr-main {
+	position:absolute;
+	font-size:.75rem;
+	/*display:none;*/
+	width:100%;
+	height:84px;
+	left:0px;
+	top:36px;
+	padding:5px 5px 10px 10px;
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+	overflow-y: scroll;
+}
+
+.msr-dialog{
+	width:150px;
+}
+
+.msr-big-dialog {
+	width:240px;
+}
+
+@media screen and (max-width: 365px) {
+	/* start of phone styles */
+	#msr-dialog #msr-main {
+		font-size:.6rem;
+	}
+	.msr-big-dialog {
+		width:195px;
+	}
+}

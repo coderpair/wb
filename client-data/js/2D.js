@@ -284,6 +284,7 @@ Shape.prototype.registerHandles=function(){};
 Shape.prototype.unregisterHandles=function(){};
 Shape.prototype.selectHandles=function(select){};
 Shape.prototype.showHandles=function(state){};
+Shape.prototype.handleMouseDown=function(){};
 Shape.prototype.mouseup=function(){
     if(!this.lockSelection&&!this.dragged){
         if(this.handlesSelected){
@@ -329,6 +330,7 @@ Shape.prototype.mousedown=function(e,x,y){
                 this.showHandles(true);
                 this.selectHandles(false);
             }
+            this.handleMouseDown();
         }
     }
 };
@@ -393,6 +395,7 @@ Handle.prototype.mousedown=function(e,x,y){
             mouser.beginDrag(e,x,y);
         }
     }
+    this.owner.handleMouseDown()
 };
 Lever.prototype=new Shape();
 Lever.prototype.constructor=Lever;
@@ -933,5 +936,18 @@ Transform.prototype.select = function(state){
     Transform.superclass.select.call(this, state);
 }
 
-
+Transform.prototype.handleMouseDown = function(){
+    if(Array.isArray(this.target)){
+        if(wb_comp.list["Measurement"]){
+            wb_comp.list["Measurement"].updateTransform(
+                this
+            )
+        }   
+    }else{
+        if(wb_comp.list["Measurement"]){
+            wb_comp.list["Measurement"].updateTransform(
+            )
+        } 
+    }
+}
 
