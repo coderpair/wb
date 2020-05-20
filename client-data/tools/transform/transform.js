@@ -125,8 +125,28 @@
 					function( i, el ) {
 						var r = el.getBoundingClientRect();
 						if(insideRect(r.x,r.y,r.width,r.height,rx,ry,rx2,ry2)){
-							targets.push(el);
-							rects.push(r);
+							var r2 = {};
+							var m;
+							var transform = el.getAttributeNS(null,"transform");
+							if(transform){
+								var t = transform.substr(7, transform.length-2).split(/[\s,]+/);
+								m = [[parseFloat( t[0]   ),parseFloat( t[2]   ),parseFloat( t[4]   )],[parseFloat( t[1]   ),parseFloat( t[3]   ),parseFloat( t[5]   )],[0,0,1]]
+							}else{
+								m = [[1,0,0],[0,1,0],[0,0,1]]
+							}
+
+							if(Tools.getMarkerBoundingRect(el,r2,m)){
+								if(insideRect(r2.x,r2.y,r2.width,r2.height,rx,ry,rx2,ry2)){
+									Tools.composeRects(r,r2);
+									targets.push(el);
+									Tools.adjustBox(el,r,m);
+									rects.push(r);
+								}
+							}else{
+								targets.push(el);
+								Tools.adjustBox(el,r,m);
+								rects.push(r);
+							}
 						}
 					}
 				);
@@ -336,6 +356,7 @@
 			switch ( target.localName ) {
 				case "circle":  shape = new Transform(target,null,hideLock);   break;
 				case "ellipse": shape = new Transform(target,null,hideLock);   break;
+				case "polyline": shape = new Transform(target,null,hideLock);   break;
 				case "text": shape = new Transform(target,null,hideLock);   break;
 				case "image":  shape = new Transform(target,null,hideLock);   break;
 				case "line":    shape = new Transform(target,null,hideLock);   break;

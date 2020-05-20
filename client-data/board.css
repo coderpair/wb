@@ -324,6 +324,17 @@ html, body, svg {
 	top:12px;
 }
 
+#usercount{
+	position:fixed;
+	bottom:20px;
+	right:20px;
+	width:25px;
+	height:16px;
+	text-align:center;
+	font-size:.75rem;
+	color:gray;
+}
+
 #compass #south{
 	left:16px;
 	top:24px;

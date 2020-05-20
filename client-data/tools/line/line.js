@@ -30,7 +30,23 @@
 		end = false,
 		startX,
 		startY,
+		curLine = "line",
+		size = 4,
 		lastTime = performance.now(); //The time at which the last point was drawn
+
+
+	var icons = {
+			"line":{
+				icon:"☇",
+				isHTML:false,
+				isSVG:false
+			},
+			"arrw":{
+					icon:"↖",
+					isHTML:true,
+					isSVG:false
+			}
+	 };
 
 	//The data of the message that will be sent for every update
 	function UpdateMessage(x, y) {
@@ -48,6 +64,7 @@
 		curLineId = Tools.generateUID("s"); //"s" for straight line
 		startX= x;
 		startY=y;
+		size = Tools.getSize(),
 		Tools.drawAndSend({
 			'type': 'straight',
 			'id': curLineId,
@@ -81,12 +98,20 @@
 				Tools.drawAndSend(new UpdateMessage(x, y));
 				lastTime = performance.now();
 				if(wb_comp.list["Measurement"]){
-					wb_comp.list["Measurement"].update(
-						{type:"line",
+					var arg = {
+						type:"line",
 						x:x,
 						y:y,
 						x2:startX,
-						y2:startY}
+						y2:startY};
+					if(curLine=="arrw"){
+						var d = Math.hypot(x-arg.x2,y-arg.y2)
+						var r = (d+5.5*size)/d;
+						arg.x2 = x + (arg.x2-x)*r;
+						arg.y2 = y + (arg.y2-y)*r;
+					}
+					wb_comp.list["Measurement"].update(
+						arg
 					)
 				}
 			} else {
@@ -111,7 +136,11 @@
 		Tools.drawingEvent=true;
 		switch (data.type) {
 			case "straight":
-				createLine(data);
+				if(curLine=='line'){
+					createLine(data);
+				}else{
+					createPolyLine(data);
+				}
 				break;
 			case "update":
 				var line = svg.getElementById(data['id']);
@@ -126,7 +155,11 @@
 						}
 					}
 				}
-				updateLine(line, data);
+				if(curLine=='line'){
+					updateLine(line, data);
+				}else{
+					updatePolyLine(line, data);
+				}
 				break;
 			default:
 				console.error("Straight Line: Draw instruction with unknown type. ", data);
@@ -154,6 +187,25 @@
 		}
 		if(lineData.transform)
 			line.setAttribute("transform",lineData.transform);
+		if(lineData.marker){
+			
+			var marker = Tools.createSVGElement("marker", {
+				id: "arrw_"+lineData.id,
+				markerWidth: "6",
+				markerHeight: "4",
+				refX: "0",
+				refY: "2",
+				orient:"auto"
+			});
+			var polygon = Tools.createSVGElement("polygon", {
+					id:"arrw_poly_"+lineData.id,
+					points:"0 0, 6 2, 0 4",
+					fill: lineData.color || "black"
+			});
+			marker.appendChild(polygon);
+			document.getElementById("defs").appendChild(marker);
+			line.setAttribute("marker-end", "url(#arrw_"+lineData.id+")");
+		}
 		Tools.group.appendChild(line);
 		return line;
 	}
@@ -163,22 +215,135 @@
 		line.y2.baseVal.value = data['y2'];
 	}
 
+
+	function createPolyLine(lineData) {
+		//Creates a new line on the canvas, or update a line that already exists with new information
+		var line = svg.getElementById(lineData.id) || Tools.createSVGElement("polyline");
+		line.id = lineData.id;
+		var x2 = (lineData['x2']!==undefined?lineData['x2'] : lineData['x'])-0;
+		var y2 = (lineData['y2']!==undefined?lineData['y2'] : lineData['y'])-0;
+
+		line.setAttribute("points",  lineData['x'] + "," + lineData['y'] + " " + x2 + "," +y2
+		+ buildArrow((lineData.size || 10)/2, x2, y2, Math.atan2(y2-(lineData['y']-0), x2-(lineData['x']-0))));
+		//If some data is not provided, choose default value. The line may be updated later
+		if(Tools.useLayers)
+		line.setAttribute("class","layer-"+Tools.layer);
+		line.setAttribute("stroke", lineData.color || "black");
+		line.setAttribute("stroke-width", lineData.size || 10);
+		line.setAttribute("fill", lineData.color || "black");
+		line.setAttribute("opacity", Math.max(0.1, Math.min(1, lineData.opacity)) || 1);
+		if(lineData.data){
+			line.setAttribute("data-lock",lineData.data);
+		}
+		if(lineData.transform)
+			line.setAttribute("transform",lineData.transform);
+		if(lineData.marker){
+			
+			var marker = Tools.createSVGElement("marker", {
+				id: "arrw_"+lineData.id,
+				markerWidth: "6",
+				markerHeight: "4",
+				refX: "0",
+				refY: "2",
+				orient:"auto"
+			});
+			var polygon = Tools.createSVGElement("polygon", {
+					id:"arrw_poly_"+lineData.id,
+					points:"0 0, 6 2, 0 4",
+					fill: lineData.color || "black"
+			});
+			marker.appendChild(polygon);
+			document.getElementById("defs").appendChild(marker);
+			line.setAttribute("marker-end", "url(#arrw_"+lineData.id+")");
+		}
+		Tools.group.appendChild(line);
+		return line;
+	}
+
+	function updatePolyLine(line, data) {
+		var pts = line.getAttributeNS(null,"points").split(/[\s,]+/);
+		var sz = line.getAttributeNS(null, "stroke-width");
+		line.setAttribute("points",pts[0] + "," + pts[1] + ' ' + data['x2'] + ',' + data['y2']
+		+ buildArrow(sz/2, data['x2']-0, data['y2']-0,Math.atan2(data['y2']-pts[1], data['x2']-pts[0])));
+	};
+
+	function buildArrow(w,x0,y0,theta){
+		var x = 11*w - w*Math.sqrt(10);
+		var y = x/3;
+		var a1 = x0 - y*Math.sin(theta);
+		var a2 = y0 + y*Math.cos(theta);
+		var b1 = x0 + x*Math.cos(theta);
+		var b2 = y0 + x*Math.sin(theta);
+		var c1 = x0 + y*Math.sin(theta);
+		var c2 = y0 - y*Math.cos(theta);
+		return " "+a1+","+a2+" "+b1+","+b2+" "+c1+","+c2 + " " +x0+","+y0;
+	}
+
 	function toggle(elem){
 		if(Tools.menus["Line"].menuOpen()){
 			Tools.menus["Line"].show(false);
 		}else{
 			Tools.menus["Line"].show(true);
 		}
-		if(!menuInitialized)initMenu();
+		if(!menuInitialized)initMenu(elem);
 	};
 
 	var menuInitialized = false;
 	var anglelock = false;
 
-	function initMenu(){
+	var menuSelected = "Line";
+	var button;
+
+	function initMenu(elem){
+		button = elem;
+		var btns = document.getElementsByClassName("submenu-line");
+		for(var i = 0; i < btns.length; i++){
+			btns[i].addEventListener("click", menuButtonClicked);
+		}
 		var elem = document.getElementById("angle-lock");
 		elem.addEventListener("click",anglelockClicked);
+		updateMenu("line")
 		menuInitialized = true;
+	};
+
+	var menuButtonClicked = function(){
+			menuSelected = this.id.substr(13);
+			curLine = menuSelected;
+			updateMenu(menuSelected);
+			changeButtonIcon();
+	};
+
+	var changeButtonIcon = function(){
+		if(icons[curLine].isHTML){
+			button.getElementsByClassName("tool-icon")[0].innerHTML = icons[curLine].icon;
+		}else{
+			button.getElementsByClassName("tool-icon")[0].textContent = icons[curLine].icon;
+		}
+	};
+
+	var updateMenu = function(line){
+		var btns = document.getElementsByClassName("submenu-line");
+		for(var i = 0; i < btns.length; i++){
+			if(icons[btns[i].id.substr(13)].isSVG){
+				btns[i].getElementsByClassName("tool-icon")[0].innerHTML = icons[btns[i].id.substr(13)].menuIcon;
+			}
+			btns[i].style.backgroundColor = "#fff";
+			btns[i].style.color = "gray";
+			btns[i].style.borderRadius = "8px";
+		}
+		/*if(shape=="Ellipse"){
+			var extender = document.getElementById("submenu-line-extend")
+			extender.style.display = 'block';
+			$(extender).animate({width:250,height:200});
+		}*/
+		var btn = document.getElementById("submenu-line-" + line);
+		if(icons[btn.id.substr(13)].isSVG){
+			btn.getElementsByClassName("tool-icon")[0].innerHTML = icons[btn.id.substr(13)].menuIconActive;
+		}
+		btn.style.backgroundColor = "#eeeeff";
+		btn.style.color = "green";
+		btn.style.borderRadius = "8px";
+		
 	};
    
 	function anglelockClicked(){
@@ -205,6 +370,7 @@
 	Tools.add({ //The new tool
 		// "name": "Straight line",
 		 "icon": "☇",
+		 "title":"Lines",
         "name": "Line",
         //"icon": "",
 		"listeners": {
@@ -218,8 +384,14 @@
 		"toggle":toggle,
 		"menu":{
 			"title": 'Lines',
-			"content": `<div style="width:143px;" class="tool-extra submenu-line"  id="submenu-rect-angleLock">
-							<div id="submenu-line-extend" style="padding:5px;font-size:.8rem;color: gray"><i style="font-size:1rem;margin-left:5px" id="angle-lock" class="fas fa-unlock"></i> &nbsp;0-30-45-60-90°</div>
+			"content":`<div class="tool-extra submenu-line" id="submenu-line-line">
+							<span title="solid line" class="tool-icon">☇</span>
+						</div>
+						<div class="tool-extra submenu-line" id="submenu-line-arrw">
+							<span title="solid arrow" class="tool-icon">` + icons["arrw"].icon + `</span>
+						</div>
+						<div style="width:143px;display:block" class="tool-extra"  id="submenu-line-angleLock">
+							<div style="margin-top:5px;padding:5px;font-size:.8rem;color: gray"><i style="font-size:1rem;margin-left:5px" id="angle-lock" class="fas fa-unlock"></i> &nbsp;0-30-45-60-90°</div>
 						</div>`,
 			"listener": menuListener
 		},

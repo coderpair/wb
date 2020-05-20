@@ -665,6 +665,12 @@ Transform.prototype.init = function(target,rect,hideLock) {
                 this.m = [[1,0,0],[0,1,0],[0,0,1]]
             }
             var box = target.getBoundingClientRect();
+            Tools.adjustBox(target,box,this.m);
+
+            var r2 = {};
+			if(Tools.getMarkerBoundingRect(target,r2,this.m)){
+                Tools.composeRects(box,r2);
+			}
 
             x = (box.x+window.scrollX)/Tools.scale;
             y = (box.y+window.scrollY)/Tools.scale;
@@ -803,12 +809,12 @@ Transform.prototype.refresh = function() {
             var rot = [[dot,-cross],[cross,dot]];
             for(var i = 0;i<4;i++){
                 var v = this.points[i].subtract(center);
-                var m = this.multiplyMatrices(rot,[[v.x],[v.y]]);
+                var m = Tools.multiplyMatrices(rot,[[v.x],[v.y]]);
                 this.points[i].x=m[0][0]*D+center.x;
                 this.points[i].y=m[1][0]*D+center.y;
                 if(i!=2){
                     var v = this.handles[i].point.subtract(center);
-                    var m = this.multiplyMatrices(rot,[[v.x],[v.y]]);
+                    var m = Tools.multiplyMatrices(rot,[[v.x],[v.y]]);
                     this.handles[i].point.x=m[0][0]*D+center.x;
                     this.handles[i].point.y=m[1][0]*D+center.y;
                     this.handles[i].refresh();
@@ -856,28 +862,12 @@ Transform.prototype.generateTransformMatrix = function(){
 Transform.prototype.updateMatrix = function(m,multiple,i){
     var prod;
     if(multiple) {
-        prod = this.multiplyMatrices(m,this.m[i]);
+        prod = Tools.multiplyMatrices(m,this.m[i]);
      } else{
-        prod = this.multiplyMatrices(m,this.m);
+        prod = Tools.multiplyMatrices(m,this.m);
     }
     return "matrix(" + prod[0][0] + " "  + prod[1][0] + " " + prod[0][1] + " " + prod[1][1] + " " + prod[0][2] + " " + prod[1][2] + ")";
 };
-
-
-Transform.prototype.multiplyMatrices = function(m1, m2) {
-    var result = [];
-    for (var i = 0; i < m1.length; i++) {
-        result[i] = [];
-        for (var j = 0; j < m2[0].length; j++) {
-            var sum = 0;
-            for (var k = 0; k < m1[0].length; k++) {
-                sum += m1[i][k] * m2[k][j];
-            }
-            result[i][j] = sum;
-        }
-    }
-    return result;
-}
 
 
 /*****

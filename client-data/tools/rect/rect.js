@@ -295,7 +295,8 @@
 	Tools.add({ //The new tool
 		// "name": "Rectangle",
 		 "icon": "▢",
-        "name": "Rectangle",
+		"name": "Rectangle",
+		"title": "Shapes",
 		"listeners": {
 			"press": start,
 			"move": move,
@@ -309,10 +310,10 @@
 		"menu":{
 			"title": 'Shapes',
 			"content": `<div class="tool-extra submenu-rect" id="submenu-rect-Circle">
-							<span class="tool-icon">◯</span>
+							<span title = "circle" class="tool-icon">◯</span>
 						</div>
 						<div class="tool-extra submenu-rect" id="submenu-rect-Ellipse">
-							<span class="tool-icon">` + icons["Ellipse"].icon + `</span>
+							<span title = "ellipse" class="tool-icon">` + icons["Ellipse"].icon + `</span>
 						</div><div id="submenu-rect-extend" style="display:none;width:50px;height:20px"><div>`,
 			"listener": menuListener
 		},

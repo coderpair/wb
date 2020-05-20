@@ -274,7 +274,8 @@
 	Tools.add({ //The new tool
 		// "name": "Pencil",
 		 "icon": "✏",
-        "name": "Pencil",
+		"name": "Pencil",
+		"title":"Pencil",
 		"listeners": {
 			"press": startLine,
 			"move": continueLine,

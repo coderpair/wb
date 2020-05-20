@@ -81,6 +81,19 @@
 				curobj.x2=elem.x.baseVal.value+elem.width.baseVal.value;
 				curobj.y2=elem.y.baseVal.value+elem.height.baseVal.value;  
 				break;
+			case "polyline":
+				var pts = elem.getAttributeNS(null,"points").split(/[\s,]+/);
+				var size = elem.getAttributeNS(null,"stroke-width")-0;
+				curobj.type="line";
+				curobj.x=pts[0]-0;
+				curobj.y=pts[1]-0;
+				curobj.x2=pts[2]-0;
+				curobj.y2= pts[3]-0;
+				var d = Math.hypot(curobj.x-curobj.x2,curobj.x-curobj.y2)
+				var r = (d+5.5*size)/d;
+				curobj.x2 = curobj.x + (curobj.x2-curobj.x)*r;
+				curobj.y2 = curobj.y + (curobj.y2-curobj.y)*r;
+				break;
 			case "line": 
 				curobj.type="line";
 				curobj.x=elem.x1.baseVal.value;
@@ -160,7 +173,7 @@
 			matrix.e = matrix.a*(curobj.x+curobj.x2)/2 + matrix.c*(curobj.y+curobj.y2)/2+parseFloat( el[4] )-(curobj.x+curobj.x2)/2;
 			matrix.f = matrix.b*(curobj.x+curobj.x2)/2 + matrix.d*(curobj.y+curobj.y2)/2+parseFloat( el[5] )-(curobj.y+curobj.y2)/2;
 		}
-		var results = decomposeMatrix(matrix);
+		var results = Tools.decomposeMatrix(matrix);
 		updateHTML(transformHTML(results,elemHTML(curobj)));
 	}
 
@@ -240,43 +253,7 @@
 		document.getElementById("msr-main").innerHTML = html
 	};
 
-	function decomposeMatrix(mat) {
-		var a = mat.a;
-		var b = mat.b;
-		var c = mat.c;
-		var d = mat.d;
-		var e = mat.e;
-		var f = mat.f;
-	  
-		var delta = a * d - b * c;
-	  
-		let result = {
-		  translation: [e, f],
-		  rotation: 0,
-		  scale: [0, 0],
-		  skew: [0, 0],
-		};
-	  
-		// Apply the QR-like decomposition.
-		if (a != 0 || b != 0) {
-		  var r = Math.sqrt(a * a + b * b);
-		  result.rotation = b > 0 ? Math.acos(a / r) : -Math.acos(a / r);
-		  result.scale = [r, delta / r];
-		  result.skew = [Math.atan((a * c + b * d) / (r * r)), 0];
-		} else if (c != 0 || d != 0) {
-		  var s = Math.sqrt(c * c + d * d);
-		  result.rotation =
-			Math.PI / 2 - (d > 0 ? Math.acos(-c / s) : -Math.acos(c / s));
-		  result.scale = [delta / s, s];
-		  result.skew = [0, Math.atan((a * c + b * d) / (s * s))];
-		} else {
-		  // a = b = c = d = 0
-		}
-		result.rotation=result.rotation*180/Math.PI;
-		result.skew[0]=result.skew[0]*180/Math.PI
-		result.skew[1]=result.skew[1]*180/Math.PI
-		return result;
-	  }
+	
 
 	//Dialog Box
 	function toggleDialog() {
