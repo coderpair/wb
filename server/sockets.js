@@ -59,10 +59,11 @@ function socketConnection(socket) {
 		joinBoard(name).then(board => {
 			//Send all the board's data as soon as it's loaded
 			var batches = board.getAll();
-			socket.emit("broadcast", { _children: (batches[0] || []),_more:(batches.length>1)});
+			socket.emit("broadcast", { _children: (batches[0] || []),_more:(batches.length>1),userCount:board.users.size});
 			for(var i = 1; i < batches.length; i++){
 				socket.emit("broadcast", { _children: batches[i],_more:(i!=batches.length-1) });
 			}
+			socket.broadcast.to(board.name).emit('broadcast', {userCount:board.users.size});
 		});
 	}));
 
@@ -115,6 +116,8 @@ function socketConnection(socket) {
 					if (userCount === 0) {
 						board.save();
 						delete boards[room];
+					}else{
+						socket.broadcast.to(board.name).emit('broadcast', {userCount:board.users.size});
 					}
 				});
 			}
