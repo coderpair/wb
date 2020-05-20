@@ -31,11 +31,14 @@
 		startX,
 		startY,
 		curLine = "line",
-		size = 4,
+		size = 4
 		lastTime = performance.now(); //The time at which the last point was drawn
-
-
-	var icons = {
+	
+		var dashmode = '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"  viewBox="-47 -57 250 250" style="enable-background:new -47 -57 250 250;"><g><path id="submenu-rect-path" fill="';
+		
+		var dashmode2 = '" d="M60.669,89.331l35.592-35.592l10.606,10.608L71.276,99.938L60.669,89.331z M131.944,39.27l28.663-28.662L150.001,0 l-28.663,28.662L131.944,39.27z M35.593,114.407L0.001,150l10.606,10.607l35.592-35.593L35.593,114.407z"/></g></svg>';
+		 
+		var icons = {
 			"line":{
 				icon:"☇",
 				isHTML:false,
@@ -45,16 +48,15 @@
 					icon:"↖",
 					isHTML:true,
 					isSVG:false
+			},
+			"dashline":{
+				icon: `<span><img style = 'margin-top:-7px;' draggable="false" src='data:image/svg+xml;utf8,` + dashmode + `black` + dashmode2 + `' ></span>`,
+				menuIcon:`<span><img style = 'margin-top:-7px;' draggable="false" src='data:image/svg+xml;utf8,` + dashmode + `gray` + dashmode2 + `' ></span>`,
+				menuIconActive:`<span><img style = 'margin-top:-7px;' draggable="false" src='data:image/svg+xml;utf8,` + dashmode + `green` + dashmode2 + `' ></span>`,
+				isHTML:true,
+				isSVG:true
 			}
 	 };
-
-	//The data of the message that will be sent for every update
-	function UpdateMessage(x, y) {
-		this.type = 'update';
-		this.id = curLineId;
-		this.x2 = x;
-		this.y2 = y;
-	}
 
 	function startLine(x, y, evt) {
 
@@ -64,10 +66,11 @@
 		curLineId = Tools.generateUID("s"); //"s" for straight line
 		startX= x;
 		startY=y;
-		size = Tools.getSize(),
+		size = Tools.getSize();
 		Tools.drawAndSend({
 			'type': 'straight',
 			'id': curLineId,
+			'line':curLine,
 			'color': Tools.getColor(),
 			'size': Tools.getSize(),
 			'opacity': Tools.getOpacity(),
@@ -94,8 +97,16 @@
 				x = startX + d * Math.cos(alpha);
 				y = startY + d * Math.sin(alpha);
 			}
+			var curUpdate = { //The data of the message that will be sent for every new point
+				'type': 'update',
+				'id': curLineId,
+				'line':curLine,
+				'x2': x,
+				'y2': y
+			}
 			if (performance.now() - lastTime > 70 || end) {
-				Tools.drawAndSend(new UpdateMessage(x, y));
+				
+				Tools.drawAndSend(curUpdate);
 				lastTime = performance.now();
 				if(wb_comp.list["Measurement"]){
 					var arg = {
@@ -115,7 +126,7 @@
 					)
 				}
 			} else {
-				draw(new UpdateMessage(x, y));
+				draw(curUpdate);
 			}
 			
 		}
@@ -136,10 +147,10 @@
 		Tools.drawingEvent=true;
 		switch (data.type) {
 			case "straight":
-				if(curLine=='line'){
-					createLine(data);
-				}else{
+				if(data.line=='arrw'){
 					createPolyLine(data);
+				}else{
+					createLine(data);
 				}
 				break;
 			case "update":
@@ -155,10 +166,10 @@
 						}
 					}
 				}
-				if(curLine=='line'){
-					updateLine(line, data);
-				}else{
+				if(data.line=='arrw'){
 					updatePolyLine(line, data);
+				}else{
+					updateLine(line, data);
 				}
 				break;
 			default:
@@ -181,6 +192,9 @@
 		line.setAttribute("class","layer-"+Tools.layer);
 		line.setAttribute("stroke", lineData.color || "black");
 		line.setAttribute("stroke-width", lineData.size || 10);
+		if(lineData.line=="dashline"){
+			line.setAttribute("stroke-dasharray", "10 10" || "10 10");
+		}
 		line.setAttribute("opacity", Math.max(0.1, Math.min(1, lineData.opacity)) || 1);
 		if(lineData.data){
 			line.setAttribute("data-lock",lineData.data);
@@ -389,6 +403,9 @@
 						</div>
 						<div class="tool-extra submenu-line" id="submenu-line-arrw">
 							<span title="solid arrow" class="tool-icon">` + icons["arrw"].icon + `</span>
+						</div>
+						<div class="tool-extra submenu-line" id="submenu-line-dashline">
+							<span title="dashed line" class="tool-icon">` + icons["dashline"].icon + `</span>
 						</div>
 						<div style="width:143px;display:block" class="tool-extra"  id="submenu-line-angleLock">
 							<div style="margin-top:5px;padding:5px;font-size:.8rem;color: gray"><i style="font-size:1rem;margin-left:5px" id="angle-lock" class="fas fa-unlock"></i> &nbsp;0-30-45-60-90°</div>
