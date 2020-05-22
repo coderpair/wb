@@ -54,6 +54,7 @@
 	curId = "",
 	lastX = 0,
 	lastY = 0,
+	dashed = false,
 	lastTime = performance.now(); //The time at which the last point was drawn
 
 	function start(x, y, evt) {
@@ -69,6 +70,7 @@
 			'color': Tools.getColor(),
 			'size': Tools.getSize(),
 			'opacity': Tools.getOpacity(),
+			'dashed': (dashed?true:false),
 			'x': x,
 			'y': y,
 			'x2': x,
@@ -173,6 +175,9 @@
 		shape.setAttribute("class","layer-"+Tools.layer);
 		shape.setAttribute("stroke", data.color || "black");
 		shape.setAttribute("stroke-width", data.size || 10);
+		if(data.dashed==true){
+			shape.setAttribute("stroke-dasharray", "10 10" || "10 10");
+		}
 		shape.setAttribute("opacity", Math.max(0.1, Math.min(1, data.opacity)) || 1);
 		Tools.group.appendChild(shape);
 		return shape;
@@ -216,19 +221,15 @@
 			shape.setAttribute("transform",data.transform);
 	}
 
-    
 	function toggle(elem){
-		if(curshape=="Rectangle"){
-			curshape=menuShape;
-			if(!menuInitialized)initMenu(elem);
-			Tools.menus["Rectangle"].show(true);
-		}else if(Tools.menus["Rectangle"].menuOpen()){
+		if(Tools.menus["Rectangle"].menuOpen()){
 			Tools.menus["Rectangle"].show(false);
 		}else{
-			curshape="Rectangle";
+			Tools.menus["Rectangle"].show(true);
 		}
-		changeButtonIcon();
+		if(!menuInitialized)initMenu(elem);
 	};
+	
 
 	var menuInitialized = false;
 	var menuShape = "Circle";
@@ -240,7 +241,9 @@
 		for(var i = 0; i < btns.length; i++){
 			btns[i].addEventListener("click", menuButtonClicked);
 		}
-		updateMenu("Circle")
+		var elem = document.getElementById("rect-dashed");
+		elem.addEventListener("click",dashedClicked);
+		updateMenu("Rectangle")
 		menuInitialized = true;
 	};
 
@@ -284,6 +287,17 @@
 		
 	};
 
+	function dashedClicked(){
+		var elem = document.getElementById("rect-dashed");
+		if(dashed){
+			dashed = false;
+			elem.setAttribute("class","far fa-square");
+		}else{
+			elem.setAttribute("class","far fa-check-square");
+			dashed = true;
+		}
+	};
+
 	function menuListener(elem, onButton, onMenu, e) {
 		if(!onMenu&&!onButton){
 			e.stopPropagation();
@@ -309,12 +323,18 @@
         },
 		"menu":{
 			"title": 'Shapes',
-			"content": `<div class="tool-extra submenu-rect" id="submenu-rect-Circle">
+			"content": `<div class="tool-extra submenu-rect" id="submenu-rect-Rectangle">
+							<span title = "rectangle" class="tool-icon">▢</span>
+						</div>
+						<div class="tool-extra submenu-rect" id="submenu-rect-Circle">
 							<span title = "circle" class="tool-icon">◯</span>
 						</div>
 						<div class="tool-extra submenu-rect" id="submenu-rect-Ellipse">
 							<span title = "ellipse" class="tool-icon">` + icons["Ellipse"].icon + `</span>
-						</div><div id="submenu-rect-extend" style="display:none;width:50px;height:20px"><div>`,
+						</div>
+						<div style="width:143px;display:block" class="tool-extra"  id="submenu-rect-dashed">
+							<div style="margin-top:5px;padding:5px;font-size:.8rem;color: gray"><i style="font-size:.8rem;margin-left:5px" id="rect-dashed" class="far fa-square"></i> &nbsp;dashed</div>
+						</div>`,
 			"listener": menuListener
 		},
 		"mouseCursor": "crosshair",

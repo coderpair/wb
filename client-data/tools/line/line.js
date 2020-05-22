@@ -45,7 +45,7 @@
 				isSVG:false
 			},
 			"arrw":{
-					icon:"↖",
+					icon:"→",
 					isHTML:true,
 					isSVG:false
 			},
