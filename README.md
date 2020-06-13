@@ -49,6 +49,11 @@ The transform tool allows you to move, rotate, and resize objects. The first var
 
 The desmos calculator activates within its own moveable floating window. The state of the calculator is shared among all participants.
 
+### Shared Text Editor and Coding Evaluator
+
+With the shared text editor, you can collaborate on a text document. Switch modes to collaborate on code in Javascript, Python, and C++. A real time compiler for each is provided, which can handle the basics of the language (nothing too fancy).
+To activate the editor plugin, you will need to sign up for a free Firebase account and follow the intructions provided below.
+
 ### Element locking ###
 
 To lock an element, select the single element transform and click on the element. At the bottom right of the screen, you will see a small lock. Click on the lock to "lock" the element. Unlock in the same manner. Once locked, the element cannot be deleted by the pink skull eraser. It may, however, be deleted by the black scull eraser. This is useful with images/documents that you want to write on top of and subsequently erase those markings.
@@ -127,6 +132,29 @@ And start the server with:
 ```
 PORT=8080 HTTPS=true npm start
 ```
+
+## Setting up the editor plugin
+
+Everything in wb works out of the box except the editor plugin. For this, you will need to sign up for an account with  [Firebase](https://firebase.google.com/). Firebase
+is a suite of integrated products designed to help you develop your app, grow your user base, and
+earn money. You can [sign up here for a free account](https://console.firebase.google.com/).
+
+After signing up, you will need to enter your database info in the file board.html:
+
+```
+ <!-- Editor dep: Firebase/Firepad -->
+	<script>
+		var firepad_config = {
+			   apiKey: '<API_KEY>',
+      authDomain: "<AUTH_DOMAIN>.firebaseapp.com",
+      databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
+		};
+	</script>
+ 
+```
+
+More info is available on setting up firepad/firebase in the [Firepad repo](https://github.com/FirebaseExtended/firepad).
+
 
 ## Troubleshooting
 
