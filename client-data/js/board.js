@@ -892,7 +892,11 @@ Tools.applyShortcuts = function(shortcuts,toolName){
 		}
 		window.addEventListener("keydown", function (e) {
 			for(var i = 0; i < Tools.shortcuts.changeToolList.length; i++){
-				if (e.key === Tools.shortcuts.changeToolList[i].key && !$(e.target).is("textarea,input[type=text]")) {
+				if (e.key === Tools.shortcuts.changeToolList[i].key 
+					&& !$(e.target).is("textarea,input[type=text]")
+					&& !$(e.target).is($(".CodeMirror"))
+					&& !$(e.target).is($(".CodeMirror").find("*"))
+				) {
 					Tools.change(Tools.shortcuts.changeToolList[i].toolName);
 					document.activeElement.blur();
 				}
@@ -907,7 +911,12 @@ Tools.applyShortcuts = function(shortcuts,toolName){
 				}else{
 					key = keys[0];
 				}
-				if (pass && e.key === key && !$(e.target).is("textarea,input[type=text]")) {
+				if (pass && e.key === key 
+					&& !$(e.target).is("textarea,input[type=text]")
+					&& !$(e.target).is($(".CodeMirror"))
+					&& !$(e.target).is($(".CodeMirror").find("*"))
+
+				) {
 					Tools.shortcuts.actionList[i].action();
 				}
 			}
