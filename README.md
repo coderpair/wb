@@ -77,6 +77,10 @@ The "z" key will zoom you all the way out and wait for the user to click on the 
 
 Of course, you can reconfigure the shortcuts to your liking. And, you can opt to have only subset of the tools listed.
 
+### The Geometry Component ###
+
+In the lower right-hand corner, you will find the geometry component. The geometry component provides geometrical info about the various drawing elements such as lines and shapes. You may use this to create drawings which require a greater level of precision.
+
 ## Running your own instance of WB
 
 If you have your own web server, and want to run a private instance of WB on it, you can. It should be very easy to get it running on your own server.
@@ -145,15 +149,15 @@ After signing up, you will need to enter your database info in the file board.ht
  <!-- Editor dep: Firebase/Firepad -->
 	<script>
 		var firepad_config = {
-			   apiKey: '<API_KEY>',
-      authDomain: "<AUTH_DOMAIN>.firebaseapp.com",
-      databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
+			apiKey: '<API_KEY>',
+      			authDomain: "<AUTH_DOMAIN>.firebaseapp.com",
+      			databaseURL: 'https://<DATABASE_NAME>.firebaseio.com'
 		};
 	</script>
  
 ```
 
-More info is available on setting up firepad/firebase in the [Firepad repo](https://github.com/FirebaseExtended/firepad).
+More info is available on setting up Firepad/Firebase in the [Firepad repo](https://github.com/FirebaseExtended/firepad).
 
 
 ## Troubleshooting
