@@ -1,0 +1,264 @@
+@media only screen and (max-width: 450px) {
+	/* CSS rules here for screens above 450px */
+		#wb-editor {
+			width:280px;
+			height:465px;
+		}
+	}
+
+@media only screen and (min-width: 450px) and (max-width: 550px) {
+	/* CSS rules here for screens above 550px */
+		#wb-editor {
+			width:400px;
+			height:465px;
+		}
+	}
+
+
+@media only screen and (min-width: 550px) and (max-width: 650px) {
+/* CSS rules here for screens above 650px */
+	#wb-editor {
+		width:500px;
+		height:465px;
+	}
+}
+
+@media only screen and (min-width: 650px) and (max-width: 750px) {
+	/* CSS rules here for screens above 650px */
+		#wb-editor {
+			width:600px;
+			height:465px;
+		}
+	}
+
+@media only screen and (min-width: 750px) {
+/* CSS rules here for screens above 750px */
+
+	#wb-editor {
+		width:600px;
+		height:465px;
+	}
+}
+
+@media only screen and (max-height: 400px) {
+	/* CSS rules here for screens above 70px */
+	
+		#wb-editor {
+			height:320px;
+		}
+	}
+
+#wb-editor-container {
+	position:absolute;
+	top:20px;
+	left:30px;
+	border:1px solid lightgray;
+	/*-webkit-user-select:none;*/
+	-webkit-box-shadow: -1px 4px 18px -6px rgba(0,0,0,0.75);
+	-moz-box-shadow: -1px 4px 18px -6px rgba(0,0,0,0.75);
+	box-shadow: -1px 4px 18px -6px rgba(0,0,0,0.75);
+}
+
+#wb-editor-container .CodeMirror-scroll{
+	margin-right:-30px;
+}
+
+#wb-editor-container-header {
+	padding: 9px 10px 9px 10px;
+	cursor: move;
+	opacity:.7;
+	background-color: #2196F3;
+	color: #fff;
+}
+
+#wb-editor-container-modes {
+	display:none;
+	overflow:hidden;
+	padding:9px 5px 5px 5px;
+	z-index:10;
+	width:100%;
+	height:45px;
+	background-color: #efefef;
+	color: #fff;
+	border-bottom:1px solid lightgray;
+	background: -webkit-linear-gradient(#fcfcfc, #eaeaea);
+	background: -moz-linear-gradient(#fcfcfc, #eaeaea);
+	background:	-o-linear-gradient(#fcfcfc, #eaeaea);
+	background:	linear-gradient(#fcfcfc, #eaeaea);
+}
+
+#wb-editor-container-toolbar {
+	overflow:hidden;
+	padding:3px 5px 5px 5px;
+	z-index:10;
+	width:100%;
+	height:30px;
+	background-color: #f7f7f7;
+	color: #999999;
+	border-bottom:1px solid lightgray;
+}
+
+#wb-editor {
+	position:relative;
+	overflow:hidden;
+	background-color:white;
+}
+
+#wb-editor-input {
+	border-right: 1px solid #ccc;
+	min-height:100px;
+	
+}
+
+#wb-editor-result{
+	padding:0px;
+}
+
+#wb-editor-result-container {
+	position:absolute;
+	top:0px;
+	width:100%;
+}
+
+.row.wb-editor {
+	height:100%;
+}
+
+#wb-canvas {
+	position:absolute;
+	background-color:#efefef;
+	top:50%;
+	width:100%;
+	height:50%;
+	overflow:scroll;
+}
+
+.wb-editor-button {
+	cursor:pointer;
+	padding:2px 6.5px 0px 6.5px;
+	margin:0px 1px 0px 0px;
+	border: 0px solid #000;
+	border-radius:3px;
+	background-color:#1666a7;
+	color:#FFFFFF;
+	border-bottom:1px solid #064687;
+	text-align:center;
+
+}
+
+.wb-editor-button:focus {
+	outline: none;
+}
+
+.wb-editor-button:active {
+	background-color:#2676b7;
+	border-bottom:1px solid #165687;
+}
+
+.wb-editor-icon {
+	font-size:.95rem;
+	color: #fff;
+    text-shadow: 0 1px 0 #666;
+}
+
+.wb-editor-mode {
+	cursor:pointer;
+	color: white;
+	font-size:.7rem;
+	background-color: #666666; 
+	border: none;
+	padding: 5px;
+	margin:0px 1px;
+	border-radius:2px;
+	text-align: center;
+	vertical-align:top;
+	text-decoration: none;
+	display: inline-block;
+	background: -webkit-linear-gradient(#888888, #666666);
+	background:	-moz-linear-gradient(#888888, #666666);
+	background:	-o-linear-gradient(#888888, #666666);
+	background:	linear-gradient(#888888, #666666);
+}
+
+#wb-close-options{
+	color:#666666;
+	margin-right:10px;
+}
+
+#wb-close-edit{
+	margin-right:6px;
+}
+
+.wb-button{
+	border:0px solid black;
+	background-color:transparent;
+}
+
+.modal-header.wb-modal-header{
+	display:block;
+}
+
+.wb-button-inactive{
+	display:none;
+}
+
+.wb-button:focus{
+	outline: none;
+}
+
+.wb-mode-button{
+	margin-bottom:-2px;
+	color:#666666;
+}
+
+.wb-edit-button{
+	margin-top:-2px;
+	color:#999999;
+}
+
+.wb-textoptions-button{
+	color: white;
+}
+
+#wb-code-template{
+	display:none;
+}
+
+.CodeMirror .cm-spell-error:not(.cm-url):not(.cm-comment):not(.cm-tag):not(.cm-word){
+	background:rgba(255,0,0,.15)
+}
+
+.resizer {
+	position: relative;
+	float:left;
+	overflow: hidden;
+	background: blue;
+	height: 200px;
+	width: 200px;
+	z-index:9;
+}
+
+.klipse-result .CodeMirror {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	right: 0;
+	left: 0;
+	margin-right:15px;
+	height: 50%;
+  }
+	
+@media only screen and (max-width: 576px) {
+	/* CSS rules here for screens above 70px */
+
+	#wb-editor-input {
+		border-right: 0px solid #ccc;
+		border-bottom: 1px solid #ccc;
+		
+	}
+
+		#wb-editor-result{
+			margin-left:15px;
+		}
+	
+}

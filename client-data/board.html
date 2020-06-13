@@ -3,11 +3,13 @@
 
 <head>
 	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, user-scalable=no" />
 	<title>LCFPrepBoard</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	
 	<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css" integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh" crossorigin="anonymous">
 	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
-  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+ 
   	<link rel="stylesheet" type="text/css" href="board.css" />
 	<script src="https://kit.fontawesome.com/0166a4ad2b.js" crossorigin="anonymous"></script>
 	<script src="socket.io.js"></script>
@@ -23,7 +25,7 @@
 {
     opacity:0.25 !important;
 }
-.canvascolor-container{background-color:black;border-radius:5px;overflow:hidden;width:179px;padding:2px;display:none;}.canvascolor-container canvas{cursor:crosshair;}.canvascolor-history{overflow:auto;}.canvascolor-history > div{margin:2px;display:inline-block;}</style></head>
+.canvascolor-container{background-color:black;border-radius:5px;overflow:hidden;width:179px;padding:2px;display:none;}.canvascolor-container canvas{cursor:crosshair;}.canvascolor-history{overflow:auto;}.canvascolor-history > div{margin:2px;display:inline-block;}</style>
 
 </head>
 
@@ -32,6 +34,12 @@
 		$(window).on("load", function() {
 			init();
 		});
+		$(document).ready(function(){
+  			$('[data-toggle="tooltip"]').tooltip();   
+		});
+		document.addEventListener('touchmove', function (event) {
+  			if (event.scale !== 1) { event.preventDefault(); }
+		}, {passive: false} );
 	</script>
 	<div id="loadingMessage">Loading</div>
 	<div id="overlay"></div>
@@ -68,12 +76,65 @@
 			
 		</svg>
 	</div>
-	<div id="calc-container" style="display:none">
-		<div id="calc-container-header">Click here to move<button type="button" class="close" id="close-calc" aria-label="Close"><span aria-hidden="true">×</span></button>
+	<div class="window" id="calc-container" style="display:none">
+		<div id="calc-container-header">Calc
+			<button type="button" class="close window-button" id="close-calc" aria-label="Close"><span aria-hidden="true">×</span></button>
+			<button type="button" class="close window-button window-icon-button" id="max-calc" aria-label="Max"><span aria-hidden="true"><i  class="fa fa-window-maximize wb-editor-icon"></i></span></button>
 		</div>
 		<div id="calculator"></div>
 	</div>
-	
+
+	<div class="window" id="wb-editor-container" style="display:none">
+		<div id="wb-editor-container-header"><span id='wb-editor-curmode'>Text</span> Editor &nbsp;
+			<button class="wb-editor-button" data-toggle="tooltip" data-trigger="hover"  title="Modes" id="wb-options" type="button"><i  class="fas fa-bars wb-editor-icon"></i></button>
+			<button class="wb-editor-button wb-button-inactive"  data-toggle="tooltip" data-trigger="hover"  title="Run" id="wb-editor-run" type="button"><i  class="fas fa-play-circle wb-editor-icon"></i></button>
+			<button class="wb-editor-button wb-button-inactive" data-toggle="tooltip" data-trigger="hover"  title="Real-time Run"  id="wb-editor-live" type="button"><i id="wb-editor-live-icon" class="fas fa-circle-notch fa-spin wb-editor-icon"></i></button>
+			<button type="button" class="wb-button wb-textoptions-button"  data-toggle="tooltip" data-trigger="hover"  title="Text Options" id="wb-textoptions" aria-label="Down"><span aria-hidden="true"><i  class="fas fa-angle-double-down"></i></span></button>
+			<button type="button" class="close window-button" id="close-editor" aria-label="Close"><span aria-hidden="true">×</span></button>
+			<button type="button" class="close window-button window-icon-button"  data-toggle="tooltip" data-trigger="hover"  title="Maximize" id="max-editor" aria-label="Max"><span aria-hidden="true"><i  class="fa fa-window-maximize wb-editor-icon"></i></span></button>
+		</div>
+		<div id="wb-editor-container-modes">
+			<button class="wb-button wb-mode-button"  id="wb-close-options" type="button"><i class="fas fa-angle-double-up" aria-hidden="true"></i></button>
+			<button class="wb-editor-mode" id="wb-text"  data-toggle="tooltip" data-trigger="hover"  title="Text editor" type="button">text</button> 
+			<button class="wb-editor-mode" id="wb-js"  data-toggle="tooltip" data-trigger="hover"  title="Javascript compiler/editor" type="button">js</button> 
+			<button class="wb-editor-mode" id="wb-python"  data-toggle="tooltip" data-trigger="hover"  title="Python compiler/editor" type="button">py</button> 
+			<button class="wb-editor-mode" id="wb-cpp"  data-toggle="tooltip" data-trigger="hover"  title="C++ compiler/Editor" type="button">c++</button> 
+		</div>
+		<div id="wb-editor-container-toolbar">
+			<button class="wb-button wb-edit-button" id="wb-close-edit" type="button"><i class="fas fa-angle-double-up" aria-hidden="true"></i></button>
+			<button class="wb-button wb-edit-button" id="wb-spell-check"  data-toggle="tooltip" data-trigger="hover"  title="Check spelling" type="button"><i id="wb-editor-spell-check-icon" class="fas fa-spell-check"></i></button>  
+			<button class="wb-button wb-edit-button" id="wb-code-template"  data-toggle="tooltip" data-trigger="hover"  title="Code template" type="button"><i class="fa fa-file-code-o"></i></button>
+			<button class="wb-button wb-edit-button" id="wb-ed-undo"  data-toggle="tooltip" data-trigger="hover"  title="Undo" type="button"><i class="fas fa-undo"></i></button>  
+			<button class="wb-button wb-edit-button" id="wb-ed-redo"  data-toggle="tooltip" data-trigger="hover"  title="Redo" type="button"><i class="fas fa-redo"></i></button>  
+		</div>
+	  <div id="wb-editor">
+		<div class="row wb-editor">
+		  <div class="col-sm-12" id="wb-editor-input">
+		  </div>
+		</div>
+	  </div>
+	</div>
+	<!-- Modal -->
+	<div class="modal fade" id="myModal" role="dialog">
+		<div class="modal-dialog modal-dialog-centered">
+		
+		  <!-- Modal content-->
+		  <div class="modal-content">
+			<div class="modal-header wb-modal-header">
+			  <button type="button" class="close" data-dismiss="modal">&times;</button>
+			  <h4 class="modal-title">Insert Code Template</h4>
+			</div>
+			<div class="modal-body">
+			  <p>This will insert a basic template for the current language, replacing existing code. Do you wish to continue?</p>
+			</div>
+			<div class="modal-footer">
+			<button type="button" id="wb-ed-insert-template" class="btn btn-default" data-dismiss="modal">Ok</button>
+			  <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+			</div>
+		  </div>
+		  
+		</div>
+	  </div>
 	<div id="menu" class="menu">
 		<div id="menuItems">
 			<ul id="tools" class="tools">
@@ -129,8 +190,7 @@
 		</div>
 	</div>
 	<div id="template" style="display:none;"></div>
-	<script src="js/2D.js"></script>
-	<script src="js/Init2D.js"></script>
+	
 	<script type="application/json" id="translations">{}</script>
 	<script src="js/path-data-polyfill.js"></script>
 	<script src="js/minitpl.js"></script>
@@ -140,14 +200,61 @@
 	<script src="tools/rect/rect.js"></script>
 	<script src="tools/text/text.js"></script>
 	<script src="tools/eraser/eraser.js"></script>
+
+	<!-- BEGIN TRANSFORM TOOL -->
+	<!-- Transform dep: 2D -->
+	<script src="js/2D.js"></script>
+	<script src="js/Init2D.js"></script>
 	<script src="tools/transform/transform.js"></script>
+	<!-- END TRANSFORM TOOL -->
+
 	<script src="tools/document/document.js"></script>
+
+	<!-- BEGIN EDITOR TOOL -->
+ 	<!-- Editor dep: CodeMirror --> 
+	 <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.43.0/codemirror.min.js"></script>
+	 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.43.0/codemirror.min.css" />
+	 
+	 <!-- Editor dep: Typo -->
+	 <script src="https://rawgit.com/cfinke/Typo.js/master/typo/typo.js"></script>
+
+	<!-- Editor dep: Klipse -->
+	<script>
+		window.klipse_settings = {
+		  	selector_eval_python_client: 'no_element',
+		};
+	</script>
+	<script src="js/klipse_plugin.min.js"></script>
+
+	<!-- Editor dep: Firebase/Firepad -->
+	<script>
+		var firepad_config = {
+			apiKey: '<API_KEY>',
+			authDomain: "firepad-tests.firebaseapp.com",
+			databaseURL: "https://firepad-tests.firebaseio.com",
+			childref: "-M8gOdeQOJOAzcTKFuXE"
+		};
+	</script>
+	<script src="https://www.gstatic.com/firebasejs/5.5.4/firebase.js"></script>
+	<link rel="stylesheet" href="https://firepad.io/releases/v1.5.9/firepad.css" />
+	<script src="https://firepad.io/releases/v1.5.9/firepad.min.js"></script>
+
+	<!-- Editor -->
+	<script src="tools/editor/editor.js"></script>
+	<!-- END EDITOR TOOL-->
+
 	<script src="tools/hand/hand.js"></script>
 	<script src="tools/grid/grid.js"></script>
 	<script src="tools/clear/clear.js"></script>
 	<script src="tools/eraser2/eraser2.js"></script>
+
+	<!-- BEGIN CALCULATOR TOOL-->
+	<!-- Calculator dep: Desmos-->
 	<script src="https://www.desmos.com/api/v1.5/calculator.js?apiKey=dcb31709b452b1cf9dc26972add0fda6"></script>
+	
 	<script src="tools/calculator/calculator.js"></script>
+	<!-- END CALCULATOR TOOL-->
+
 	<script src="tools/undo/undo.js"></script>
 	<script src="tools/redo/redo.js"></script>
 	<script src="tools/zoom-in/zoom-in.js"></script>

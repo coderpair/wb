@@ -28,6 +28,10 @@
 	display:none;
 	top:19px;
 	left:65px;
+	padding-bottom:43px;
+	-webkit-box-shadow: -1px 4px 18px -6px rgba(0,0,0,0.75);
+	-moz-box-shadow: -1px 4px 18px -6px rgba(0,0,0,0.75);
+	box-shadow: -1px 4px 18px -6px rgba(0,0,0,0.75);
 }
 	  
 #calc-container-header {
