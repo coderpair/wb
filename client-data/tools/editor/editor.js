@@ -151,7 +151,11 @@ int main() {
 	};
 
 	function change_editor(i){
+		if(modeIndex==i)return;
+		codeMirror.off("change",change);
+		codeMirror.off("cursorActivity",cursorActivity);
 		delete Tools.editor;
+
 		modeIndex = i;
 		live = false;
 		var _run = document.getElementById('wb-editor-run');
@@ -194,6 +198,33 @@ int main() {
 		
 	};
 
+	var change = function(cMirror,obj){
+		//console.info("change called");
+		changeCalled = true;
+		if(modeIndex!=0&&(!input_init||live)){
+			eval_code();
+			input_init=true;
+		}
+		if(spellCheck)
+		setLines((changeLock?-1000000:obj.from.line));		
+	};
+
+	//Hack for the spell checker
+	var cursor = {line:0,ch:0};
+	var cursorActivity = function(cMirror){
+		//console.info("cursorActivity called")
+		if(spellCheck&&!changeCalled&&!cursorLock&&cursor.ch!=0){
+			//console.info("replaceRange called: cursorLock and changelock true");
+			cursorLock=true;
+			changeLock=true;
+			codeMirror.replaceRange(
+				codeMirror.getRange({line:cursor.line,ch:cursor.ch-1},cursor),
+				{line:cursor.line,ch:cursor.ch-1},
+				cursor);
+		}
+		cursor = codeMirror.getCursor()
+	}
+
 	function init_texteditor(){
 		//// Initialize Firebase.
 
@@ -221,32 +252,9 @@ int main() {
 		initialized = true;
 
 		input_init=false;
-		codeMirror.on('change',function(cMirror,obj){
-			//console.log("change called");
-			changeCalled = true;
-			if(modeIndex!=0&&(!input_init||live)){
-				eval_code();
-				input_init=true;
-			}
-			if(spellCheck)
-			setLines((changeLock?-1000000:obj.from.line));		
-		});
-
-		//Hack for the spell checker
-		var cursor = {line:0,ch:0};
-		codeMirror.on('cursorActivity',function(cMirror){
-			//console.log("cursorActivity called")
-			if(spellCheck&&!changeCalled&&!cursorLock&&cursor.ch!=0){
-				//console.log("replaceRange called: cursorLock and changelock true");
-				cursorLock=true;
-				changeLock=true;
-				codeMirror.replaceRange(
-					codeMirror.getRange({line:cursor.line,ch:cursor.ch-1},cursor),
-					{line:cursor.line,ch:cursor.ch-1},
-					cursor);
-			}
-			cursor = codeMirror.getCursor()
-		});
+		
+		codeMirror.on('change',change);
+		codeMirror.on('cursorActivity',cursorActivity);
 
 		//// Create Firepad.
 		Firepad.fromCodeMirror(firepadRef, codeMirror, {
@@ -571,13 +579,13 @@ int main() {
 					linenum++;
 					if(changeCalled){
 						if(!changeLock){
-							//console.log("cursorlock false");
+							//console.info("cursorlock false");
 							cursorLock=false;
 						}
-						//console.log("changeLock false");
+						//console.info("changeLock false");
 						changeLock=false;
 					}
-					//console.log("changeCalled false");
+					//console.info("changeCalled false");
 					changeCalled=false;
 				}
 				
